@@ -84,6 +84,14 @@ Es la misma app para los dos. No pasa por App Store ni Play Store: se instala de
 - Para que no quede "Abierto" de más si se va sin abrirla: en automático, fuera de su horario (con 30 min de margen) se muestra **Cerrado** solo. Así se cierra solo al mediodía y a la noche.
 - **Abierto** / **Cerrado** manual pisan al automático: sirven para quedarse fuera de horario o para días libres.
 
+## Compartir y difundir
+
+- **Imágenes con la marca:** en Promos y Cursos, cada tarjeta tiene el botón **Imagen** (solo lo ve Ema). En el Panel → **Difundir** está la imagen "Sacá tu turno" con QR y los horarios.
+  - Formato **Historia / estado** (vertical, para estados de WhatsApp e historias de Instagram) o **Post** (para el feed de Instagram).
+  - **Compartir imagen** abre el menú del celu: elegir WhatsApp → Mi estado, o Instagram → Historia / Publicación. En la compu aparece **Guardar imagen**.
+  - Todas llevan un QR que abre la app. La de "Sacá tu turno" sirve también para imprimir y pegar en el local.
+- **Compartir link:** todos (clientes también) tienen **Compartir** en cada promo y curso, y **Compartir la app** abajo de todo: WhatsApp directo, Instagram/otras apps o copiar link.
+
 ## Pasarle el link a los clientes
 
 - Bio de Instagram, estado de WhatsApp, QR impreso en el local.

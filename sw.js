@@ -1,6 +1,6 @@
 // The Big Barber · service worker: permite instalar la app y abrirla sin señal.
 // Siempre intenta traer la versión nueva; si no hay internet, usa la guardada.
-const CACHE = 'tbb-v3';
+const CACHE = 'tbb-v4';
 const SHELL = ['./', './index.html', './manifest.json', './hero.webp', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {

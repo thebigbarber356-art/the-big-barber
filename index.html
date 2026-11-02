@@ -51,6 +51,7 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html{background:var(--bg)}
 body{background:var(--bg) radial-gradient(110% 50% at 50% -8%,rgba(212,163,95,.16),transparent 62%) no-repeat;background-attachment:fixed;color:var(--text);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent;min-height:100%}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
@@ -247,6 +248,12 @@ a{color:var(--gold-hi)}
 .install span{font-size:14px;color:var(--mute)}
 .install svg{width:17px;height:17px;vertical-align:-3px;color:var(--gold-hi)}
 .install .x{width:30px;height:30px;font-size:17px}
+
+/* Compartir */
+.im-prev{display:flex;justify-content:center;padding:10px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}
+.im-prev img{display:block;max-width:100%;max-height:46vh;width:auto;height:auto;border-radius:8px}
+.share-row{display:flex;gap:8px;flex-wrap:wrap}
+.btn .ic{width:18px;height:18px}
 .dias-ck{display:flex;flex-wrap:wrap;gap:6px}
 .dias-ck label{display:flex}
 .dias-ck input{position:absolute;opacity:0;pointer-events:none}
@@ -331,6 +338,11 @@ a{color:var(--gold-hi)}
           <div class="list" id="p-insc"></div>
         </div>
         <div class="card">
+          <h3 class="label">Difundir</h3>
+          <p class="small muted" style="margin:0">Imágenes con tu marca para estados de WhatsApp, historias y posts de Instagram. Las de cada promo y curso están en el botón <b>Imagen</b> de sus pestañas.</p>
+          <div class="share-row"><button class="btn sm" type="button" data-imagen="app">Imagen “Sacá tu turno” con QR</button><button class="btn ghost sm" type="button" data-compartir="app">Compartir link</button></div>
+        </div>
+        <div class="card">
           <h3 class="label">Ajustes</h3>
           <p class="small muted" style="margin:0">Horarios, servicios de hombre y mujer con precio y duración, WhatsApp, dirección y radio del local. Las promos y los cursos se editan desde sus pestañas.</p>
           <button class="btn ghost" id="p-ajustes" type="button">Editar ajustes</button>
@@ -344,6 +356,7 @@ a{color:var(--gold-hi)}
     <hr class="rule" style="width:100%;margin-bottom:10px">
     <span class="verso">Lo que Dios <em class="gold-text">ha prometido,</em><br>tus ojos lo verán.</span>
     <span class="cita">Habacuc 2:3</span>
+    <button class="btn ghost sm" id="compartir-app" type="button" style="margin-top:14px">Compartir la app</button>
     <button class="link" id="acceso" type="button" style="margin-top:10px">Acceso Ema</button>
   </footer>
 </div>
@@ -380,7 +393,8 @@ const CONFIG = {
   },
   // firebase: { apiKey:"...", authDomain:"...", projectId:"...", storageBucket:"...", messagingSenderId:"...", appId:"..." },
   adminEmail: "thebigbarber356@gmail.com",
-  demoPin: "1234"
+  demoPin: "1234",
+  appUrl: "https://thebigbarber356-art.github.io/the-big-barber/"
 };
 </script>
 <script>
@@ -823,7 +837,8 @@ function renderPromos(){
       + (p.turno && vig ? '<button type="button" class="btn" data-usar-promo="'+esc(p.id)+'">Sacar turno con esta promo</button>' : '')
       + (!p.turno && wa && vig ? '<a class="btn" href="'+wa+'" target="_blank" rel="noopener">Pedirla por WhatsApp</a>' : '')
       + (!p.turno && !wa && vig ? '<span class="small muted">Consultala en el local.</span>' : '')
-      + (S.admin ? '<button type="button" class="btn ghost sm" data-editar-promo="'+esc(p.id)+'">Editar</button>' : '')
+      + (vig ? '<button type="button" class="btn ghost sm" data-compartir="promo:'+esc(p.id)+'">Compartir</button>' : '')
+      + (S.admin ? '<button type="button" class="btn ghost sm" data-imagen="promo:'+esc(p.id)+'">Imagen</button><button type="button" class="btn ghost sm" data-editar-promo="'+esc(p.id)+'">Editar</button>' : '')
       + '</div></article>';
   }).join('');
 }
@@ -856,7 +871,8 @@ function renderCursos(){
       + (precios.length ? '<div class="precios">'+precios.join('')+'</div>' : '')
       + (cupo ? '<div class="cupo"><span>'+(lleno ? 'Cupo completo' : (quedan === 1 ? 'Queda 1 lugar' : 'Quedan '+quedan+' lugares'))+' · '+ins+' de '+cupo+' inscriptos</span><div class="bar"><i style="width:'+Math.min(100, ins/cupo*100)+'%"></i></div></div>' : '')
       + '<div class="row"><button type="button" class="btn" data-inscribir="'+esc(c.id)+'"'+(lleno?' disabled':'')+'>'+(lleno?'Sin lugares':'Inscribirme')+'</button>'
-      + (S.admin ? '<button type="button" class="btn ghost sm" data-editar="'+esc(c.id)+'">Editar</button>' : '') + '</div>'
+      + '<button type="button" class="btn ghost sm" data-compartir="curso:'+esc(c.id)+'">Compartir</button>'
+      + (S.admin ? '<button type="button" class="btn ghost sm" data-imagen="curso:'+esc(c.id)+'">Imagen</button><button type="button" class="btn ghost sm" data-editar="'+esc(c.id)+'">Editar</button>' : '') + '</div>'
       + '</article>';
   }).join('');
 }
@@ -1179,6 +1195,268 @@ function abrirCurso(id){
   });
 }
 
+/* ---------- compartir: link y piezas con la marca ---------- */
+function appUrl(hash){
+  let u = CONFIG.appUrl || '';
+  try { if (/github\.io$/.test(location.hostname)) u = location.origin + location.pathname.replace(/index\.html$/, ''); } catch(e){}
+  return u + (hash ? '#' + hash : '');
+}
+const urlCorta = () => appUrl().replace(/^https?:\/\//, '').replace(/\/$/, '');
+function textoCompartir(tipo, id){
+  if (tipo === 'promo') {
+    const p = S.promos.find(x => x.id === id); if (!p) return null;
+    return {hash:'promos', texto:'Promo en The Big Barber: ' + p.titulo + (+p.precio ? ' a ' + money(p.precio) : '') + (+p.antes > +p.precio ? ' (antes ' + money(p.antes) + ')' : '') + '. ' + diasTxt(p.dias) + (p.turno ? '. Sacá tu turno desde la app:' : '. Mirala en la app:')};
+  }
+  if (tipo === 'curso') {
+    const c = S.cursos.find(x => x.id === id); if (!c) return null;
+    return {hash:'cursos', texto:'Curso "' + c.titulo + '" con Ema en The Big Barber' + (c.inicio ? '. Empieza: ' + c.inicio : '') + '. Info e inscripción en la app:'};
+  }
+  return {hash:'', texto:'Sacá tu turno en The Big Barber desde el celu, y mirá las promos y los cursos:'};
+}
+function compartirItem(tipo, id){
+  const t = textoCompartir(tipo, id); if (!t) return;
+  const url = appUrl(t.hash), full = t.texto + '\n' + url;
+  openSheet(head('Compartir')
+    + '<p style="margin:0">' + esc(t.texto) + '</p><p class="small muted" style="margin:0;overflow-wrap:anywhere">' + esc(url) + '</p>'
+    + '<div class="sec" style="margin:0;gap:8px">'
+    + '<a class="btn wa block" href="https://wa.me/?text=' + encodeURIComponent(full) + '" target="_blank" rel="noopener">Mandar por WhatsApp</a>'
+    + (navigator.share ? '<button type="button" class="btn ghost block" id="sh-nativo">Instagram y otras apps</button>' : '')
+    + '<button type="button" class="btn ghost block" id="sh-copiar">Copiar link</button></div>');
+  if (navigator.share) $('#sh-nativo').addEventListener('click', () => { navigator.share({title:'The Big Barber', text:t.texto, url}).catch(() => {}); });
+  $('#sh-copiar').addEventListener('click', () => {
+    try { navigator.clipboard.writeText(full).then(() => toast('Link copiado'), () => toast('No se pudo copiar. Mantené apretado el link para copiarlo.')); }
+    catch(e){ toast('No se pudo copiar. Mantené apretado el link para copiarlo.'); }
+  });
+}
+
+let qrPromesa = null;
+function cargarQR(){
+  if (window.qrcode) return Promise.resolve(window.qrcode);
+  if (!qrPromesa) qrPromesa = loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js').then(() => window.qrcode || null, () => null);
+  return qrPromesa;
+}
+function horariosResumen(){
+  const fmt = m => m % 60 ? Math.floor(m/60) + ':' + pad(m%60) : String(m/60);
+  const txt = w => parseRangos(S.neg.horarios[w]).map(([a,b]) => fmt(a) + ' a ' + fmt(b)).join(' y ');
+  const orden = [1,2,3,4,5,6,0], grupos = [];
+  orden.forEach((w, i) => {
+    const t = txt(w); if (!t) return;
+    const g = grupos[grupos.length-1];
+    if (g && g.t === t && g.hastaI === i-1) { g.hasta = w; g.hastaI = i; } else grupos.push({desde:w, hasta:w, hastaI:i, t});
+  });
+  return grupos.map(g => (g.desde === g.hasta ? DIAS_C[g.desde] : DIAS_C[g.desde] + ' a ' + DIAS_C[g.hasta]) + ' · ' + g.t + ' h');
+}
+function contenidoPieza(tipo, id){
+  if (tipo === 'promo') {
+    const p = S.promos.find(x => x.id === id); if (!p) return null;
+    const chips = [diasTxt(p.dias)];
+    if (p.hasta) { const d = parseFecha(p.hasta); chips.push('Hasta el ' + d.getDate() + ' de ' + MESES[d.getMonth()]); }
+    return {hash:'promos', kicker:'Promo' + (CATS[p.cat] ? ' · ' + CATS[p.cat] : ''), titulo:p.titulo, precio:+p.precio ? money(p.precio) : '',
+      antes:+p.antes > +p.precio ? money(p.antes) : '', badge:descuento(p) ? '−' + descuento(p) + '%' : '', chips, detalle:p.detalle || '', extra:[],
+      cta:p.turno ? 'Reservá en la app' : 'Pedila en la app'};
+  }
+  if (tipo === 'curso') {
+    const c = S.cursos.find(x => x.id === id); if (!c) return null;
+    const cupo = +c.cupo || 0, quedan = cupo ? Math.max(0, cupo - (+c.inscriptos||0)) : null;
+    const extra = [];
+    if (+c.inscripcion > 0) extra.push('Inscripción ' + money(c.inscripcion));
+    if (quedan !== null) extra.push(quedan ? (quedan === 1 ? 'Queda 1 lugar' : 'Quedan ' + quedan + ' lugares') : 'Cupo completo');
+    return {hash:'cursos', kicker:'Curso' + (CATS_CURSO[c.cat] ? ' · ' + CATS_CURSO[c.cat] : ''), titulo:c.titulo, precio:+c.valor ? money(c.valor) : '',
+      precioSub:+c.valor ? (c.valorDetalle || 'total') : '', antes:'', badge:'', chips:[c.inicio && 'Empieza: ' + c.inicio, c.duracion, c.modalidad].filter(Boolean),
+      detalle:c.detalle || '', extra, cta:'Inscribite en la app'};
+  }
+  const cats = catsConServicios().map(k => CATS[k]);
+  return {hash:'', kicker:'Turnos online', titulo:'Sacá tu turno desde el celu', precio:'', antes:'', badge:'',
+    chips:cats.concat(promosVisibles().length ? ['Promos'] : [], S.cursos.some(c => c.activo !== false) ? ['Cursos'] : []),
+    detalle:'Elegí el servicio, el día y el horario. Sin llamadas ni esperas.', extra:horariosResumen(), cta:'Escaneá el QR o entrá a'};
+}
+function rr(x, X, Y, w, h, r){ x.beginPath(); x.moveTo(X+r, Y); x.arcTo(X+w, Y, X+w, Y+h, r); x.arcTo(X+w, Y+h, X, Y+h, r); x.arcTo(X, Y+h, X, Y, r); x.arcTo(X, Y, X+w, Y, r); x.closePath(); }
+function lineas(x, text, maxW, maxLines){
+  const words = String(text || '').split(/\s+/).filter(Boolean), out = [];
+  let cur = '';
+  for (const w of words) { const t = cur ? cur + ' ' + w : w; if (!cur || x.measureText(t).width <= maxW) cur = t; else { out.push(cur); cur = w; } }
+  if (cur) out.push(cur);
+  if (maxLines && out.length > maxLines) {
+    const l = out.slice(0, maxLines); let last = l[maxLines-1];
+    while (last.length > 1 && x.measureText(last + '…').width > maxW) last = last.slice(0, -1);
+    l[maxLines-1] = last.trim() + '…'; return l;
+  }
+  return out;
+}
+function espaciado(x, text, cx, y, sp){
+  const ch = Array.from(text), ws = ch.map(c => x.measureText(c).width);
+  const total = ws.reduce((a,b) => a+b, 0) + sp * (ch.length - 1);
+  let X = cx - total/2; x.textAlign = 'left';
+  ch.forEach((c, i) => { x.fillText(c, X, y); X += ws[i] + sp; });
+  x.textAlign = 'center'; return total;
+}
+async function dibujarPieza(tipo, id, formato){
+  const D = contenidoPieza(tipo, id); if (!D) throw new Error('sin datos');
+  const story = formato !== 'post';
+  const W = 1080, H = story ? 1920 : 1350, PAD = 96, MAXW = W - PAD*2;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d');
+  try { await Promise.all(['600 80px "Bodoni Moda"', 'italic 500 40px "Bodoni Moda"', '700 40px "Barlow Condensed"', '600 40px "Barlow Condensed"', '500 40px "Barlow"'].map(f => document.fonts.load(f))); } catch(e){}
+  const qrLib = await cargarQR();
+  const img = $('.sticker');
+  if (img && !img.complete) await new Promise(r => { img.onload = r; img.onerror = r; setTimeout(r, 3000); });
+  const FD = '"Bodoni Moda", Didot, "Bodoni 72", Georgia, serif', FL = '"Barlow Condensed", "Arial Narrow", sans-serif', FB = 'Barlow, system-ui, sans-serif';
+  const oro = (y0, y1) => { const g = x.createLinearGradient(0, y0, 0, y1); g.addColorStop(0, '#f2d29b'); g.addColorStop(.5, '#d4a35f'); g.addColorStop(1, '#a8733a'); return g; };
+  const T = story ? {k:30, t:84, p:150, a:44, ch:28, d:36, e:38, qr:240, top:150, bot:210} : {k:28, t:70, p:118, a:38, ch:26, d:32, e:34, qr:190, top:96, bot:92};
+
+  // Fondo: negro con halo dorado y marco fino
+  x.fillStyle = '#09090a'; x.fillRect(0, 0, W, H);
+  const halo = x.createRadialGradient(W/2, -H*0.06, 10, W/2, -H*0.06, H*0.8);
+  halo.addColorStop(0, 'rgba(212,163,95,0.30)'); halo.addColorStop(1, 'rgba(212,163,95,0)');
+  x.fillStyle = halo; x.fillRect(0, 0, W, H);
+  x.strokeStyle = 'rgba(212,163,95,0.38)'; x.lineWidth = 2; rr(x, 34, 34, W-68, H-68, 30); x.stroke();
+  x.textBaseline = 'top'; x.textAlign = 'center';
+
+  // Medir bloques de texto
+  x.font = '600 ' + T.t + 'px ' + FD; const tit = lineas(x, D.titulo, MAXW, 3);
+  x.font = '500 ' + T.d + 'px ' + FB; let det = lineas(x, D.detalle, MAXW - 40, story ? 3 : 2);
+  x.font = '600 ' + T.ch + 'px ' + FL;
+  const chipW = D.chips.map(s => x.measureText(s.toUpperCase()).width + s.length*2 + 44);
+  const filas = []; let fila = [], fw = 0;
+  D.chips.forEach((s, i) => { const w = chipW[i]; if (fila.length && fw + 12 + w > MAXW) { filas.push(fila); fila = []; fw = 0; } fila.push(i); fw += (fila.length > 1 ? 12 : 0) + w; });
+  if (fila.length) filas.push(fila);
+  const chipH = T.ch + 26;
+  const qrSize = qrLib ? T.qr : 0, qrY = H - T.bot - T.qr;
+  const alto = det2 => {
+    let h = tit.length * T.t * 1.1 + 34;
+    if (D.precio) h += T.p * 1.02 + (D.antes || D.precioSub ? T.a * 1.3 : 0) + 22;
+    if (filas.length) h += filas.length * chipH + (filas.length - 1) * 12 + 30;
+    if (det2.length) h += det2.length * T.d * 1.35 + 24;
+    if (D.extra.length) h += D.extra.length * T.e * 1.3 + 16;
+    return h;
+  };
+  const arriba = T.top + T.k + 34;
+  let libre = qrY - 40 - arriba - alto(det);
+  if (libre < 230 && det.length) { det = []; libre = qrY - 40 - arriba - alto(det); }
+  const S = Math.max(170, Math.min(story ? 640 : 380, libre - 30));
+
+  // Encabezado
+  x.fillStyle = '#d4a35f'; x.font = '600 ' + T.k + 'px ' + FL;
+  espaciado(x, ('The Big Barber · ' + D.kicker).toUpperCase(), W/2, T.top, T.k * 0.24);
+  let y = arriba;
+
+  // Sticker
+  if (img && img.naturalWidth) {
+    const sW = S * img.naturalWidth / img.naturalHeight;
+    x.save(); x.translate(W/2, y + S/2); x.rotate(-3 * Math.PI/180);
+    x.shadowColor = 'rgba(0,0,0,0.65)'; x.shadowBlur = 44; x.shadowOffsetY = 18;
+    x.drawImage(img, -sW/2, -S/2, sW, S); x.restore();
+    if (D.badge) {
+      const r = story ? 84 : 66, bx = Math.min(W - PAD - r + 20, W/2 + sW/2 + r*0.35), by = y + r + 10;
+      x.fillStyle = oro(by - r, by + r); x.beginPath(); x.arc(bx, by, r, 0, Math.PI*2); x.fill();
+      x.fillStyle = '#1b1206'; x.font = '700 ' + Math.round(r*0.62) + 'px ' + FL; x.textBaseline = 'middle'; x.fillText(D.badge, bx, by + 2); x.textBaseline = 'top';
+    }
+  }
+  y += S + 34;
+
+  // Título
+  x.fillStyle = '#f2eee7'; x.font = '600 ' + T.t + 'px ' + FD;
+  tit.forEach(l => { x.fillText(l, W/2, y); y += T.t * 1.1; });
+  y += 22;
+
+  // Precio
+  if (D.precio) {
+    x.font = '600 ' + T.p + 'px ' + FD; x.fillStyle = oro(y, y + T.p); x.fillText(D.precio, W/2, y); y += T.p * 1.02;
+    if (D.antes) {
+      x.font = '500 ' + T.a + 'px ' + FB; x.fillStyle = '#7d776f';
+      const txt = 'antes ' + D.antes, w = x.measureText(txt).width; x.fillText(txt, W/2, y);
+      x.fillRect(W/2 - w/2 + x.measureText('antes ').width, y + T.a*0.55, w - x.measureText('antes ').width, 3);
+      y += T.a * 1.3;
+    } else if (D.precioSub) {
+      x.font = '600 ' + T.a + 'px ' + FL; x.fillStyle = '#9c968d'; espaciado(x, D.precioSub.toUpperCase(), W/2, y, 4); y += T.a * 1.3;
+    }
+    y += 22;
+  }
+
+  // Chips
+  if (filas.length) {
+    x.font = '600 ' + T.ch + 'px ' + FL;
+    filas.forEach(f => {
+      const tw = f.reduce((a, i) => a + chipW[i], 0) + 12 * (f.length - 1); let X = W/2 - tw/2;
+      f.forEach(i => {
+        x.strokeStyle = 'rgba(212,163,95,0.55)'; x.lineWidth = 2; rr(x, X, y, chipW[i], chipH, chipH/2); x.stroke();
+        x.fillStyle = '#f2d29b'; espaciado(x, D.chips[i].toUpperCase(), X + chipW[i]/2, y + 13, 2);
+        X += chipW[i] + 12;
+      });
+      y += chipH + 12;
+    });
+    y += 18;
+  }
+
+  // Detalle y datos extra
+  if (det.length) { x.font = '500 ' + T.d + 'px ' + FB; x.fillStyle = '#cfc9bf'; det.forEach(l => { x.fillText(l, W/2, y); y += T.d * 1.35; }); y += 24; }
+  if (D.extra.length) { x.font = '600 ' + T.e + 'px ' + FL; x.fillStyle = '#f2eee7'; D.extra.forEach(l => { x.fillText(l, W/2, y); y += T.e * 1.3; }); }
+
+  // Pie: QR + llamado a la acción + link
+  const url = appUrl(D.hash);
+  x.textAlign = 'left';
+  const ctaW = MAXW - (qrSize ? qrSize + 40 : 0);
+  x.font = '600 ' + (story ? 46 : 38) + 'px ' + FD; const ctaL = lineas(x, D.cta, ctaW, 2);
+  x.font = '600 ' + (story ? 28 : 24) + 'px ' + FL; const urlL = lineas(x, urlCorta().replace(/\//g, '/ ').trim(), ctaW, 2).map(s => s.replace(/\/ /g, '/'));
+  const ctaH = ctaL.length * (story ? 52 : 44) + 14 + urlL.length * (story ? 34 : 30);
+  const bloqueW = qrSize ? qrSize + 40 + Math.min(ctaW, Math.max(...ctaL.map(l => { x.font = '600 ' + (story ? 46 : 38) + 'px ' + FD; return x.measureText(l).width; }), ...urlL.map(l => { x.font = '600 ' + (story ? 28 : 24) + 'px ' + FL; return x.measureText(l).width; }))) : MAXW;
+  const bx0 = qrSize ? (W - bloqueW)/2 : PAD;
+  if (qrSize) {
+    x.fillStyle = '#f2eee7'; rr(x, bx0, qrY, qrSize, qrSize, 20); x.fill();
+    try {
+      const q = qrLib(0, 'M'); q.addData(url); q.make();
+      const n = q.getModuleCount(), cell = Math.floor((qrSize - 28) / n), off = (qrSize - cell*n) / 2;
+      x.fillStyle = '#09090a';
+      for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (q.isDark(r, k)) x.fillRect(bx0 + off + k*cell, qrY + off + r*cell, cell, cell);
+    } catch(e){}
+  }
+  const tx = qrSize ? bx0 + qrSize + 40 : W/2;
+  if (!qrSize) x.textAlign = 'center';
+  let ty = qrY + (T.qr - ctaH) / 2;
+  x.font = '600 ' + (story ? 46 : 38) + 'px ' + FD; x.fillStyle = '#f2eee7';
+  ctaL.forEach(l => { x.fillText(l, tx, ty); ty += story ? 52 : 44; }); ty += 14;
+  x.font = '600 ' + (story ? 28 : 24) + 'px ' + FL; x.fillStyle = '#d4a35f';
+  urlL.forEach(l => { x.fillText(l, tx, ty); ty += story ? 34 : 30; });
+  x.textAlign = 'center';
+
+  if (story) { x.font = 'italic 500 30px ' + FD; x.fillStyle = '#8a837a'; x.fillText('Lo que Dios ha prometido, tus ojos lo verán', W/2, H - 150); }
+  return c;
+}
+const PIEZA = {formato:'historia'};
+function abrirImagen(tipo, id){
+  openSheet(head('Imagen para compartir', 'Estados de WhatsApp, historias y posts de Instagram')
+    + '<div class="seg full" id="im-fmt" role="group" aria-label="Formato">' + [['historia','Historia / estado'],['post','Post']].map(([k,l]) => '<button type="button" data-fmt="' + k + '" aria-pressed="' + (PIEZA.formato === k) + '">' + l + '</button>').join('') + '</div>'
+    + '<div class="im-prev"><img id="im-img" alt="Vista previa de la imagen"></div>'
+    + '<p class="small muted" id="im-msg" style="margin:0">Armando la imagen…</p>'
+    + '<div class="sec" style="margin:0;gap:8px"><button type="button" class="btn block" id="im-share" hidden>Compartir imagen</button><a class="btn ghost block" id="im-dl" href="#" download="bigbarber.png">Guardar imagen</a></div>');
+  let file = null, urlObj = null;
+  const render = async () => {
+    const msg = $('#im-msg'); if (!msg) return;
+    msg.textContent = 'Armando la imagen…';
+    const canvas = await dibujarPieza(tipo, id, PIEZA.formato);
+    const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+    if (!$('#im-img')) return;
+    if (urlObj) URL.revokeObjectURL(urlObj);
+    urlObj = URL.createObjectURL(blob);
+    $('#im-img').src = urlObj;
+    const nombre = 'bigbarber-' + tipo + '-' + PIEZA.formato + '.png';
+    file = new File([blob], nombre, {type:'image/png'});
+    let puede = false; try { puede = !!(navigator.canShare && navigator.canShare({files:[file]})); } catch(e){}
+    $('#im-share').hidden = !puede;
+    const dl = $('#im-dl'); dl.href = urlObj; dl.download = nombre;
+    msg.textContent = puede ? 'Tocá Compartir imagen y elegí WhatsApp (Mi estado) o Instagram (Historia o Post).' : 'Tocá Guardar imagen o mantené apretada la vista previa para guardarla en el celu.';
+  };
+  $('#im-fmt').addEventListener('click', e => {
+    const b = e.target.closest('[data-fmt]'); if (!b) return;
+    PIEZA.formato = b.dataset.fmt; $$('#im-fmt button').forEach(z => z.setAttribute('aria-pressed', String(z === b)));
+    render().catch(() => { const m = $('#im-msg'); if (m) m.textContent = 'No se pudo armar la imagen.'; });
+  });
+  $('#im-share').addEventListener('click', () => {
+    if (file) navigator.share({files:[file]}).catch(e => { if (e && e.name !== 'AbortError') toast('No se pudo compartir desde acá. Guardá la imagen y subila desde WhatsApp o Instagram.'); });
+  });
+  render().catch(e => { console.warn(e); const m = $('#im-msg'); if (m) m.textContent = 'No se pudo armar la imagen.'; });
+}
+
 /* ---------- pestañas ---------- */
 function setTab(t){
   if (t === 'panel' && !S.admin) t = 'turnos';
@@ -1216,6 +1494,8 @@ document.addEventListener('click', async e => {
   if (d.olvidar) { ls.set('tbb-mis-turnos', ls.get('tbb-mis-turnos', []).filter(t => t.id !== d.olvidar)); return renderMio(); }
   if (d.promoCat) { S.promoCat = d.promoCat; return renderPromos(); }
   if (d.cursoCat) { S.cursoCat = d.cursoCat; return renderCursos(); }
+  if (d.compartir) { const [t, id] = d.compartir.split(':'); return compartirItem(t, id); }
+  if (d.imagen) { const [t, id] = d.imagen.split(':'); return abrirImagen(t, id); }
   if (d.inscribir) return abrirInscripcion(d.inscribir);
   if (d.editar) return abrirCurso(d.editar);
   if (d.editarPromo) return abrirPromo(d.editarPromo);
@@ -1231,6 +1511,7 @@ document.addEventListener('click', async e => {
   if (d.borrarInsc) { if (!confirmarDoble(el)) return; await store.deleteInscripcion(d.borrarInsc, d.curso); toast('Inscripción borrada'); return; }
   switch (el.id) {
     case 'acceso': return S.admin ? setTab('panel') : abrirLogin();
+    case 'compartir-app': return compartirItem('app');
     case 'p-salir': await store.logout(); setTab('turnos'); toast('Saliste del panel'); return;
     case 'p-ajustes': return abrirAjustes();
     case 'add-curso': return abrirCurso(null);
