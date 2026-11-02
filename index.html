@@ -66,7 +66,7 @@ a{color:var(--gold-hi)}
 
 /* Cabecera */
 .hero{display:grid;grid-template-columns:minmax(110px,38%) 1fr;gap:16px;align-items:center}
-.sticker{width:100%;max-width:210px;justify-self:center;transform:rotate(-3deg);filter:drop-shadow(0 14px 26px rgba(0,0,0,.7)) drop-shadow(0 0 22px rgba(212,163,95,.18))}
+.sticker{width:100%;height:auto;max-width:210px;justify-self:center;transform:rotate(-3deg);filter:drop-shadow(0 14px 26px rgba(0,0,0,.7)) drop-shadow(0 0 22px rgba(212,163,95,.18))}
 .hero-txt{display:flex;flex-direction:column;gap:8px;min-width:0}
 .kicker{font-family:var(--f-label);font-weight:600;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--mute)}
 .brand{margin:0;font-family:var(--f-display);font-weight:600;font-size:clamp(30px,8.4vw,42px);line-height:.98;letter-spacing:-.01em;text-wrap:balance}
@@ -265,6 +265,28 @@ a{color:var(--gold-hi)}
 .check{display:flex;gap:10px;align-items:center}
 .check input{width:20px;height:20px;accent-color:var(--gold)}
 
+/* Aviso de turno nuevo (cartel arriba) */
+.aviso{position:fixed;left:0;right:0;top:0;z-index:70;padding-top:calc(10px + env(safe-area-inset-top,0px));padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));pointer-events:none}
+.aviso-in{pointer-events:auto;max-width:536px;margin:0 auto;display:flex;gap:12px;align-items:flex-start;padding:13px 14px;border-radius:16px;background:var(--surface-2);border:1px solid var(--gold);box-shadow:0 14px 40px rgba(0,0,0,.7);animation:baja .28s ease-out}
+@keyframes baja{from{transform:translateY(-120%)}}
+.aviso .bell{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--gold-grad);color:var(--on-gold)}
+.aviso .bell svg{width:20px;height:20px}
+.aviso .txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.aviso .txt b{font-family:var(--f-label);font-weight:700;font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-hi)}
+.aviso .txt span{font-weight:600}
+.aviso .txt small{color:var(--mute);font-size:13px}
+.aviso .acts{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.aviso .x{width:30px;height:30px;font-size:17px}
+.nov:empty{display:none}
+.nov{border-color:var(--gold-line)}
+.nov-li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line-soft)}
+.nov-li:first-of-type{border-top:0}
+.nov-li .k{font-family:var(--f-label);font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--on-gold);background:var(--gold-grad);padding:3px 8px;border-radius:99px}
+.nov-li .k.i{background:transparent;color:var(--gold-hi);border:1px solid var(--gold-line)}
+.nov-li .who{min-width:0}
+.nov-li .who b{display:block;font-weight:600}
+.nov-li .who span{font-size:13px;color:var(--mute);overflow-wrap:anywhere}
+
 .toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--text);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:600;font-size:15px;box-shadow:0 10px 28px rgba(0,0,0,.6);max-width:calc(100% - 32px);text-align:center}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -326,6 +348,7 @@ a{color:var(--gold-hi)}
     <section id="tab-panel" class="tabpanel" hidden>
       <div class="sec">
         <h2 class="title">Panel de <em class="gold-text">Ema</em></h2>
+        <div class="card nov" id="p-nov"></div>
         <div id="p-aviso"></div>
         <div class="card" id="p-estado"></div>
         <div class="card">
@@ -370,10 +393,11 @@ a{color:var(--gold-hi)}
     <button class="tab" role="tab" data-tab="cursos" aria-selected="false" type="button">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3 17.5 4 7l5 4 3-6 3 6 5-4 1 10.5z"/><path d="M4 20.5h16"/></svg>Cursos</button>
     <button class="tab" role="tab" data-tab="panel" aria-selected="false" type="button" hidden>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M21 12v3"/></svg>Panel</button>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M21 12v3"/></svg>Panel<span class="n" id="panel-n" hidden></span></button>
   </div>
 </nav>
 
+<div class="aviso" id="aviso" role="status" aria-live="assertive" hidden></div>
 <div class="sheet" id="sheet" hidden><div class="sheet-in" id="sheet-in" role="dialog" aria-modal="true"></div></div>
 <div class="toast" id="toast" hidden></div>
 
@@ -504,6 +528,7 @@ function LocalStore(){
       st.turnos[id] = Object.assign({}, t, {creado:Date.now()}); save(); return id;
     },
     subTurnos(fecha, cb){ return on(() => cb(lista(st.turnos).filter(v => v.fecha === fecha))); },
+    subTurnosDesde(ts, cb){ return on(() => cb(lista(st.turnos).filter(v => (v.creado||0) > ts))); },
     async liberar(id, slots){ const t = st.turnos[id]; (slots || (t && t.slots) || [id]).forEach(s => delete st.ocupados[s]); delete st.ocupados[id]; delete st.turnos[id]; save(); },
     async bloquear(id, fecha){ st.ocupados[id] = {fecha, bloqueado:true}; save(); },
     subCursos(cb){ return on(() => cb(lista(st.cursos))); },
@@ -590,6 +615,7 @@ async function FireStore(){
       return id;
     },
     subTurnos(fecha, cb){ return db.collection('turnos').where('fecha','==',fecha).onSnapshot(s => cb(list(s)), quiet); },
+    subTurnosDesde(ts, cb){ return db.collection('turnos').where('creado','>',ts).onSnapshot(s => cb(list(s)), quiet); },
     async liberar(id, slots){ const b = db.batch(); Array.from(new Set((slots || []).concat(id))).forEach(s => b.delete(db.doc('ocupados/'+s))); b.delete(db.doc('turnos/'+id)); await b.commit(); },
     async bloquear(id, fecha){ await db.doc('ocupados/'+id).set({fecha, bloqueado:true}); },
     subCursos(cb){ return db.collection('cursos').onSnapshot(s => cb(list(s)), quiet); },
@@ -880,6 +906,7 @@ function renderCursos(){
 /* ---------- render: panel ---------- */
 function renderPanel(){
   if (!S.admin) return;
+  renderNov();
   $('#p-aviso').innerHTML = (!S.negGuardado ? '<div class="warn">Todavía no guardaste tus ajustes: horarios, servicios y precios son de ejemplo. Revisalos en <b>Ajustes</b> antes de compartir la app.</div>' : '')
     + (store && !store.demo && !S.promos.length && !S.cursos.length ? '<div class="card" style="margin-top:12px"><h3 class="label">Promos y cursos vacíos</h3><p class="small muted" style="margin:0">Podés cargar unos de ejemplo para no arrancar de cero y después editarlos o borrarlos.</p><button type="button" class="btn ghost sm" id="p-ejemplos" style="width:fit-content">Cargar ejemplos</button></div>' : '');
   renderPEstado(); renderPAgenda(); renderPInsc();
@@ -1494,6 +1521,14 @@ document.addEventListener('click', async e => {
   if (d.olvidar) { ls.set('tbb-mis-turnos', ls.get('tbb-mis-turnos', []).filter(t => t.id !== d.olvidar)); return renderMio(); }
   if (d.promoCat) { S.promoCat = d.promoCat; return renderPromos(); }
   if (d.cursoCat) { S.cursoCat = d.cursoCat; return renderCursos(); }
+  if (d.avisoX !== undefined) { $('#aviso').hidden = true; return; }
+  if (d.avisoVer) {
+    $('#aviso').hidden = true;
+    const it = novItems().find(x => x.id === d.avisoVer);
+    if (it && it.tipo === 'turno') { S.pDia = it.t.fecha; subPTurnos(); }
+    setTab('panel'); return;
+  }
+  if (d.verDia) { S.pDia = d.verDia; subPTurnos(); renderPAgenda(); const a = $('#p-agenda'); if (a) a.scrollIntoView({behavior:'smooth', block:'start'}); return; }
   if (d.compartir) { const [t, id] = d.compartir.split(':'); return compartirItem(t, id); }
   if (d.imagen) { const [t, id] = d.imagen.split(':'); return abrirImagen(t, id); }
   if (d.inscribir) return abrirInscripcion(d.inscribir);
@@ -1512,6 +1547,10 @@ document.addEventListener('click', async e => {
   switch (el.id) {
     case 'acceso': return S.admin ? setTab('panel') : abrirLogin();
     case 'compartir-app': return compartirItem('app');
+    case 'nov-visto': marcarVisto(); toast('Listo, todo visto'); return;
+    case 'nov-permiso':
+      try { Notification.requestPermission().then(p => { renderNov(); toast(p === 'granted' ? 'Avisos activados' : 'No se activaron los avisos'); }); } catch(x){ toast('Este celu no permite avisos desde acá.'); }
+      return;
     case 'p-salir': await store.logout(); setTab('turnos'); toast('Saliste del panel'); return;
     case 'p-ajustes': return abrirAjustes();
     case 'add-curso': return abrirCurso(null);
@@ -1543,6 +1582,108 @@ function subPTurnos(){
   if (!S.pDia) S.pDia = hoyYmd();
   unsubPTurnos = store.subTurnos(S.pDia, ts => { S.pTurnos = ts || []; if (S.tab === 'panel') renderPAgenda(); });
 }
+/* ---------- novedades para Ema: turnos e inscripciones nuevas ---------- */
+const Nov = {visto:0, primer:0, vistosIds:new Set(), turnos:[], insc:[], avisados:new Set(), pendientes:0, tResumen:null, tAviso:null, cargoT:false, cargoI:false};
+const ICON_BELL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>';
+let audioCtx = null;
+document.addEventListener('pointerdown', () => { try { if (!audioCtx && (window.AudioContext || window.webkitAudioContext)) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); } catch(e){} }, {passive:true});
+function sonar(){
+  try {
+    if (!audioCtx || audioCtx.state !== 'running') return;
+    const t0 = audioCtx.currentTime;
+    [[988, 0], [1319, 0.16]].forEach(([f, d]) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'sine'; o.frequency.value = f; o.connect(g); g.connect(audioCtx.destination);
+      g.gain.setValueAtTime(0.0001, t0 + d); g.gain.exponentialRampToValueAtTime(0.25, t0 + d + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + d + 0.5);
+      o.start(t0 + d); o.stop(t0 + d + 0.55);
+    });
+  } catch(e){}
+  try { navigator.vibrate && navigator.vibrate([120, 80, 120]); } catch(e){}
+}
+const novItems = () => Nov.turnos.map(t => ({tipo:'turno', id:'t:'+t.id, creado:t.creado||0, t}))
+  .concat(Nov.insc.map(i => ({tipo:'insc', id:'i:'+i.id, creado:i.creado||0, i})))
+  .sort((a,b) => b.creado - a.creado);
+function novTexto(it){
+  if (it.tipo === 'turno') { const t = it.t; return {titulo:'Nuevo turno', linea:t.nombre + ' · ' + (t.servicio || ''), sub:fechaCorta(t.fecha) + ' · ' + t.hora + ' hs'}; }
+  return {titulo:'Nueva inscripción', linea:it.i.nombre, sub:it.i.curso || 'Curso'};
+}
+function mostrarAviso(it, extra){
+  const box = $('#aviso'), tx = novTexto(it);
+  box.innerHTML = '<div class="aviso-in"><span class="bell">' + ICON_BELL + '</span><div class="txt"><b>' + tx.titulo + (extra ? ' · +' + extra + ' más' : '') + '</b><span>' + esc(tx.linea) + '</span><small>' + esc(tx.sub) + '</small></div>'
+    + '<div class="acts"><button type="button" class="x" data-aviso-x aria-label="Cerrar aviso">×</button><button type="button" class="btn sm" data-aviso-ver="' + esc(it.id) + '">Ver</button></div></div>';
+  box.hidden = false; sonar();
+  clearTimeout(Nov.tAviso); Nov.tAviso = setTimeout(() => { box.hidden = true; }, 15000);
+}
+function notificarSistema(it){
+  try {
+    if (!('Notification' in window) || Notification.permission !== 'granted' || !document.hidden || !navigator.serviceWorker) return;
+    const tx = novTexto(it);
+    navigator.serviceWorker.getRegistration().then(r => r && r.showNotification(tx.titulo, {body:tx.linea + ' · ' + tx.sub, icon:'icon-192.png', badge:'icon-192.png', tag:it.id})).catch(() => {});
+  } catch(e){}
+}
+// live = true cuando el dato llegó con la app ya abierta (no en la carga inicial)
+function procesarNov(live){
+  if (!S.admin) return;
+  const nuevos = novItems().filter(it => !Nov.avisados.has(it.id));
+  const enVivo = live ? nuevos : [];
+  nuevos.forEach(it => Nov.avisados.add(it.id));
+  Nov.pendientes += nuevos.length - enVivo.length;
+  if (enVivo.length) { mostrarAviso(enVivo[0], enVivo.length - 1); enVivo.forEach(notificarSistema); }
+  else if (Nov.pendientes) {
+    clearTimeout(Nov.tResumen);
+    Nov.tResumen = setTimeout(() => {
+      if (!Nov.pendientes) return;
+      const n = Nov.pendientes; Nov.pendientes = 0;
+      const box = $('#aviso');
+      box.innerHTML = '<div class="aviso-in"><span class="bell">' + ICON_BELL + '</span><div class="txt"><b>Novedades</b><span>' + (n === 1 ? 'Tenés 1 novedad' : 'Tenés ' + n + ' novedades') + ' desde la última vez</span><small>Turnos e inscripciones nuevas</small></div>'
+        + '<div class="acts"><button type="button" class="x" data-aviso-x aria-label="Cerrar aviso">×</button><button type="button" class="btn sm" data-aviso-ver="panel">Ver</button></div></div>';
+      box.hidden = false; clearTimeout(Nov.tAviso); Nov.tAviso = setTimeout(() => { box.hidden = true; }, 15000);
+    }, 900);
+  }
+  renderNov();
+}
+function renderNov(){
+  const items = S.admin ? novItems() : [];
+  const n = items.length, badge = $('#panel-n');
+  badge.hidden = !n; badge.textContent = n > 99 ? '99+' : n;
+  try { if (navigator.setAppBadge) { n ? navigator.setAppBadge(n) : navigator.clearAppBadge(); } } catch(e){}
+  const box = $('#p-nov'); if (!box) return;
+  const permiso = ('Notification' in window) ? Notification.permission : 'no';
+  const avisosCelu = permiso === 'granted' ? '<span class="small muted">Avisos del celu activados.</span>'
+    : permiso === 'default' ? '<button type="button" class="btn ghost sm" id="nov-permiso">Activar avisos del celu</button>' : '';
+  if (!S.admin) { box.innerHTML = ''; return; }
+  box.innerHTML = '<h3 class="label">Novedades <small>' + (n ? n + ' sin ver' : 'Al día') + '</small></h3>'
+    + (n ? '<div>' + items.slice(0, 20).map(it => {
+        if (it.tipo === 'turno') { const t = it.t;
+          return '<div class="nov-li"><span class="k">Turno</span><span class="who"><b>' + esc(t.nombre) + '</b><span>' + esc(t.servicio || '') + ' · ' + esc(fechaCorta(t.fecha)) + ' · ' + t.hora + ' hs</span></span><button type="button" class="btn ghost sm" data-ver-dia="' + t.fecha + '">Ver</button></div>'; }
+        const i = it.i, wa = waLink(i.tel, 'Hola ' + String(i.nombre).split(' ')[0] + '! Te escribo de The Big Barber por tu inscripción al curso ' + (i.curso || '') + '.');
+        return '<div class="nov-li"><span class="k i">Curso</span><span class="who"><b>' + esc(i.nombre) + '</b><span>' + esc(i.curso || '') + '</span></span>' + (wa ? '<a class="btn wa sm" href="' + wa + '" target="_blank" rel="noopener">WhatsApp</a>' : '<span></span>') + '</div>';
+      }).join('') + '</div><div class="row"><button type="button" class="btn sm" id="nov-visto">Marcar todo como visto</button>' + avisosCelu + '</div>'
+      : '<p class="small muted" style="margin:0">Cuando alguien saque un turno o se inscriba a un curso, te aparece un aviso arriba con sonido y queda anotado acá.</p>' + (avisosCelu ? '<div class="row">' + avisosCelu + '</div>' : ''));
+}
+// "Sin ver" = creado después de la última vez que Ema marcó visto (con 15 min de margen por relojes
+// atrasados en los celus de los clientes) y que no esté en la lista de ya vistos.
+const MARGEN_RELOJ = 15 * 60000;
+const esNovedad = x => (x.creado||0) > Math.max(Nov.visto - MARGEN_RELOJ, Nov.primer) && !Nov.vistosIds.has(x.id);
+function iniciarNov(){
+  Nov.visto = +ls.get('tbb-visto', 0) || 0;
+  Nov.vistosIds = new Set(ls.get('tbb-vistos-ids', []));
+  Nov.primer = +ls.get('tbb-primer-uso', 0) || 0;
+  if (!Nov.primer) { Nov.primer = Date.now(); ls.set('tbb-primer-uso', Nov.primer); }
+  if (!Nov.visto) { Nov.visto = Nov.primer; ls.set('tbb-visto', Nov.visto); }
+  Nov.avisados = new Set(); Nov.pendientes = 0; Nov.turnos = []; Nov.insc = []; Nov.cargoT = false; Nov.cargoI = false;
+  unsubAdmin.push(store.subTurnosDesde(Nov.visto - MARGEN_RELOJ, ts => {
+    Nov.turnos = (ts || []).filter(esNovedad);
+    const live = Nov.cargoT; Nov.cargoT = true; procesarNov(live);
+  }));
+}
+function marcarVisto(){
+  novItems().forEach(it => Nov.vistosIds.add(it.id.slice(2)));
+  ls.set('tbb-vistos-ids', Array.from(Nov.vistosIds).slice(-300));
+  Nov.visto = Date.now(); ls.set('tbb-visto', Nov.visto);
+  Nov.turnos = []; Nov.insc = []; $('#aviso').hidden = true; renderNov();
+}
+
 function onAdmin(isAdmin){
   S.admin = isAdmin;
   $('.tab[data-tab="panel"]').hidden = !isAdmin;
@@ -1550,8 +1691,15 @@ function onAdmin(isAdmin){
   unsubAdmin.forEach(f => f && f()); unsubAdmin = [];
   if (isAdmin) {
     subPTurnos();
-    unsubAdmin.push(store.subInscripciones(xs => { S.insc = xs || []; if (S.tab === 'panel') renderPInsc(); }));
-  } else { if (unsubPTurnos) { unsubPTurnos(); unsubPTurnos = null; } if (S.tab === 'panel') setTab('turnos'); }
+    iniciarNov();
+    unsubAdmin.push(store.subInscripciones(xs => {
+      S.insc = xs || []; if (S.tab === 'panel') renderPInsc();
+      Nov.insc = S.insc.filter(esNovedad);
+      const live = Nov.cargoI; Nov.cargoI = true; procesarNov(live);
+    }));
+    if (S.quierePanel) { S.quierePanel = false; setTab('panel'); }
+  } else { if (unsubPTurnos) { unsubPTurnos(); unsubPTurnos = null; } if (S.tab === 'panel') setTab('turnos'); $('#aviso').hidden = true; }
+  renderNov();
   syncGeo(); renderCursos(); renderPromos(); if (S.tab === 'panel') renderPanel();
 }
 
@@ -1574,6 +1722,7 @@ async function start(){
   store.onAuth(onAdmin);
   const h = (location.hash || '').slice(1);
   if (h === 'cursos' || h === 'promos') setTab(h);
+  if (h === 'panel') { if (S.admin) setTab('panel'); else S.quierePanel = true; }
   setInterval(() => { renderEstado(); renderTurnos(); }, 60000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { renderEstado(); renderTurnos(); if (S.admin && Geo.watch == null) syncGeo(); } });
 }

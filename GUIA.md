@@ -84,6 +84,14 @@ Es la misma app para los dos. No pasa por App Store ni Play Store: se instala de
 - Para que no quede "Abierto" de más si se va sin abrirla: en automático, fuera de su horario (con 30 min de margen) se muestra **Cerrado** solo. Así se cierra solo al mediodía y a la noche.
 - **Abierto** / **Cerrado** manual pisan al automático: sirven para quedarse fuera de horario o para días libres.
 
+## Avisos de turnos nuevos
+
+- Con la app abierta, cuando alguien saca un turno o se inscribe a un curso, a Ema le aparece un **cartel arriba con sonido**: nombre, servicio, día y hora, con un botón **Ver**.
+- La pestaña **Panel** muestra un número con lo que no vio, y arriba del Panel está la lista de **Novedades**. **Marcar todo como visto** la limpia.
+- Si abre la app después de un rato, le aparece "Tenés N novedades desde la última vez".
+- **Activar avisos del celu** (en Novedades): si la app quedó en segundo plano hace poco, el aviso también sale como notificación del sistema. En iPhone requiere la app instalada en la pantalla de inicio.
+- Con la app **cerrada del todo** no llegan avisos. Para eso hace falta una pieza aparte (mail automático o notificaciones push).
+
 ## Compartir y difundir
 
 - **Imágenes con la marca:** en Promos y Cursos, cada tarjeta tiene el botón **Imagen** (solo lo ve Ema). En el Panel → **Difundir** está la imagen "Sacá tu turno" con QR y los horarios.

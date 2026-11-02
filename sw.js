@@ -1,6 +1,6 @@
 // The Big Barber · service worker: permite instalar la app y abrirla sin señal.
 // Siempre intenta traer la versión nueva; si no hay internet, usa la guardada.
-const CACHE = 'tbb-v4';
+const CACHE = 'tbb-v5';
 const SHELL = ['./', './index.html', './manifest.json', './hero.webp', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
@@ -17,4 +17,13 @@ self.addEventListener('fetch', e => {
       .then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return r; })
       .catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
   );
+});
+
+// Al tocar un aviso del celu, abre la app en el Panel
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({type:'window', includeUncontrolled:true}).then(cs => {
+    for (const c of cs) { if ('focus' in c) return c.focus(); }
+    return self.clients.openWindow('./#panel');
+  }));
 });
