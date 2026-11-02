@@ -1,0 +1,1342 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#09090a">
+<meta name="description" content="Turnos, promos y cursos de The Big Barber con Ema Gutierrez.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Big Barber">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>The Big Barber</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,600;1,6..96,500;1,6..96,600&family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: columna de app (máx 560px) sobre negro profundo con un halo dorado arriba.
+   Cabecera: sticker + marca en serif de alto contraste + estado en vivo. Pestañas fijas abajo:
+   Turnos / Promos / Cursos (+ Panel solo para Ema). Tema único oscuro: negro, grafito y dorado latón. */
+:root{
+  --bg:#09090a;
+  --surface:#121214;
+  --surface-2:#19191c;
+  --surface-3:#222226;
+  --line:#2a2a2f;
+  --line-soft:#1f1f23;
+  --text:#f2eee7;
+  --mute:#9c968d;
+  --dim:#5f5b55;
+  --gold:#d4a35f;
+  --gold-hi:#f2d29b;
+  --gold-lo:#9c6b34;
+  --gold-soft:rgba(212,163,95,.12);
+  --gold-line:rgba(212,163,95,.42);
+  --on-gold:#1b1206;
+  --ok:#5ccb8a;
+  --stop:#e3644f;
+  --gold-grad:linear-gradient(135deg,var(--gold-hi) 0%,var(--gold) 48%,var(--gold-lo) 100%);
+  --f-display:"Bodoni Moda","Didot","Bodoni 72","Playfair Display",Georgia,serif;
+  --f-label:"Barlow Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:14px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{background:var(--bg) radial-gradient(110% 50% at 50% -8%,rgba(212,163,95,.16),transparent 62%) no-repeat;background-attachment:fixed;color:var(--text);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent;min-height:100%}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+a{color:var(--gold-hi)}
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px calc(104px + env(safe-area-inset-bottom,0px))}
+.gold-text{background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+.demo{display:flex;gap:8px;align-items:center;font-family:var(--f-label);font-weight:600;letter-spacing:.14em;text-transform:uppercase;font-size:11px;color:var(--gold);border:1px solid var(--gold-line);border-radius:999px;padding:4px 12px;width:fit-content;margin:0 0 12px}
+
+/* Cabecera */
+.hero{display:grid;grid-template-columns:minmax(110px,38%) 1fr;gap:16px;align-items:center}
+.sticker{width:100%;max-width:210px;justify-self:center;transform:rotate(-3deg);filter:drop-shadow(0 14px 26px rgba(0,0,0,.7)) drop-shadow(0 0 22px rgba(212,163,95,.18))}
+.hero-txt{display:flex;flex-direction:column;gap:8px;min-width:0}
+.kicker{font-family:var(--f-label);font-weight:600;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--mute)}
+.brand{margin:0;font-family:var(--f-display);font-weight:600;font-size:clamp(30px,8.4vw,42px);line-height:.98;letter-spacing:-.01em;text-wrap:balance}
+.brand em{font-style:italic;font-weight:500}
+.by{font-family:var(--f-display);font-style:italic;font-size:16px;color:var(--mute);margin-top:-4px}
+.status{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.status .dot{flex:none;width:9px;height:9px;border-radius:50%;background:var(--stop);margin-top:7px}
+.status.on{border-color:rgba(92,203,138,.35)}
+.status.on .dot{background:var(--ok);animation:pulse 2.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(92,203,138,.55)}70%{box-shadow:0 0 0 9px rgba(92,203,138,0)}100%{box-shadow:0 0 0 0 rgba(92,203,138,0)}}
+.status b{display:block;font-family:var(--f-label);font-weight:700;font-size:17px;letter-spacing:.16em;text-transform:uppercase}
+.status.on b{color:var(--ok)}
+.status span{display:block;font-size:14px;color:var(--mute)}
+.dir{font-size:13px;color:var(--mute)}
+.dir a{font-family:var(--f-label);font-weight:600;letter-spacing:.1em;text-decoration:none}
+@media (max-width:350px){.hero{grid-template-columns:1fr}.sticker{max-width:150px}}
+
+/* Secciones */
+.sec{margin-top:24px;display:flex;flex-direction:column;gap:12px}
+.title{font-family:var(--f-display);font-weight:600;font-size:31px;line-height:1.05;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.title em{font-style:italic;font-weight:500}
+.label{font-family:var(--f-label);font-weight:600;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--mute);margin:0;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.label small{font-family:var(--f-body);font-weight:500;letter-spacing:0;text-transform:none;font-size:13px;color:var(--mute)}
+.rule{height:1px;background:linear-gradient(90deg,var(--gold-line),transparent);border:0;margin:0}
+.muted{color:var(--mute)}
+.small{font-size:14px}
+.empty{padding:18px;border:1px dashed var(--line);border-radius:var(--r);color:var(--mute);text-align:center;font-size:15px}
+
+/* Selector de categoría */
+.seg{display:flex;padding:4px;gap:4px;border-radius:999px;background:var(--surface);border:1px solid var(--line);width:fit-content;max-width:100%}
+.seg button{border:0;background:transparent;border-radius:999px;padding:8px 18px;font-family:var(--f-label);font-weight:700;font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.seg button[aria-pressed="true"]{background:var(--gold-grad);color:var(--on-gold)}
+.seg.full{width:100%}
+.seg.full button{flex:1;padding-inline:4px}
+
+/* Servicios */
+.svcs{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.svc{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:baseline;padding:12px 13px;border-radius:12px;border:1px solid var(--line);background:var(--surface);text-align:left}
+.svc .n{font-weight:600;min-width:0}
+.svc .p{font-family:var(--f-display);font-weight:600;font-size:18px;font-variant-numeric:lining-nums tabular-nums;white-space:nowrap}
+.svc .d{grid-column:1/-1;font-size:13px;color:var(--mute)}
+.svc[aria-pressed="true"]{border-color:var(--gold);background:var(--gold-soft);box-shadow:inset 0 0 0 1px var(--gold-line)}
+.svc[aria-pressed="true"] .p{color:var(--gold-hi)}
+
+.promo-sel{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 14px;border-radius:12px;border:1px solid var(--gold);background:var(--gold-soft)}
+.promo-sel b{display:block;font-weight:600}
+.promo-sel span{font-size:13px;color:var(--mute)}
+
+/* Días */
+.days{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scroll-snap-type:x proximity;scrollbar-width:thin}
+.day{flex:none;scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;width:62px;padding:8px 0 7px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.day span{font-family:var(--f-label);font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.day b{font-family:var(--f-display);font-size:24px;font-weight:600;line-height:1.1;font-variant-numeric:lining-nums tabular-nums}
+.day i{font-style:normal;font-size:11px;color:var(--mute);white-space:nowrap}
+.day[aria-pressed="true"]{background:var(--gold-grad);border-color:transparent;color:var(--on-gold)}
+.day[aria-pressed="true"] span,.day[aria-pressed="true"] i{color:var(--on-gold)}
+.day.off{opacity:.42}
+
+/* Horarios */
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}
+.slot{padding:12px 0;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);font-family:var(--f-label);font-weight:700;font-size:19px;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.slot:hover:not(:disabled){border-color:var(--gold);color:var(--gold-hi)}
+.slot:disabled{cursor:default;background:transparent;color:var(--dim);border-style:dashed}
+.slot.taken:disabled{text-decoration:line-through}
+
+/* Tus turnos */
+.mio{display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:var(--r);background:var(--gold-soft);border:1px solid var(--gold-line)}
+.mio strong{font-family:var(--f-display);font-size:21px;font-weight:600}
+.mio.cancel{background:rgba(227,100,79,.08);border-color:rgba(227,100,79,.45)}
+
+/* Aviso de promos en Turnos */
+.teaser{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--r);background:var(--surface);border:1px solid var(--gold-line);text-align:left;width:100%}
+.teaser .tag{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--gold-grad);color:var(--on-gold)}
+.teaser .tag svg{width:20px;height:20px}
+.teaser div{min-width:0;flex:1}
+.teaser b{display:block;font-weight:600}
+.teaser span{font-size:13px;color:var(--mute)}
+.teaser .go{font-family:var(--f-label);font-weight:700;letter-spacing:.14em;font-size:13px;color:var(--gold-hi)}
+
+/* Tarjetas premium (promos y cursos) */
+.card-p{position:relative;display:flex;flex-direction:column;gap:12px;padding:18px 16px 16px;border-radius:18px;background:linear-gradient(180deg,var(--surface-2),var(--surface));border:1px solid var(--line);overflow:hidden}
+.card-p::before{content:"";position:absolute;inset:0 0 auto;height:1px;background:linear-gradient(90deg,transparent,var(--gold-line),transparent)}
+.card-p h3{margin:0;font-family:var(--f-display);font-weight:600;font-size:25px;line-height:1.08;text-wrap:balance}
+.card-p p{margin:0;color:#d1cbc1;max-width:62ch}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--mute);font-family:var(--f-label);font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+.chip.gold{border-color:var(--gold-line);color:var(--gold-hi)}
+.chip.warn{border-color:rgba(227,100,79,.6);color:var(--stop)}
+.badge{position:absolute;top:14px;right:14px;padding:5px 10px;border-radius:999px;background:var(--gold-grad);color:var(--on-gold);font-family:var(--f-label);font-weight:700;font-size:14px;letter-spacing:.06em}
+.card-p.has-badge h3{padding-right:70px}
+.precio-promo{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.precio-promo b{font-family:var(--f-display);font-weight:600;font-size:36px;line-height:1;font-variant-numeric:lining-nums}
+.precio-promo s{color:var(--dim);font-size:17px}
+.precios{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--line);border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.precio{background:var(--surface);padding:10px 12px;display:flex;flex-direction:column}
+.precio span{font-family:var(--f-label);font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+.precio b{font-family:var(--f-display);font-weight:600;font-size:27px;line-height:1.15;font-variant-numeric:lining-nums tabular-nums}
+.precio small{color:var(--mute);font-size:13px}
+.cupo{display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--mute)}
+.bar{height:4px;border-radius:99px;background:var(--surface-3);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold-grad);border-radius:99px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* Botones */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 20px;border-radius:999px;border:0;background:var(--gold-grad);color:var(--on-gold);font-family:var(--f-label);font-weight:700;font-size:16px;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;box-shadow:0 6px 18px rgba(212,163,95,.18)}
+.btn:disabled{opacity:.4;cursor:default;box-shadow:none}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line);box-shadow:none}
+.btn.ghost:hover{border-color:var(--gold-line)}
+.btn.wa{background:var(--ok);color:#062312;box-shadow:none}
+.btn.danger{background:transparent;color:var(--stop);border:1px solid rgba(227,100,79,.55);box-shadow:none}
+.btn.sm{padding:7px 13px;font-size:13px}
+.btn.block{width:100%}
+.link{background:none;border:0;padding:0;color:var(--mute);text-decoration:underline;font-size:14px}
+
+/* Panel */
+.card{display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line)}
+.geo{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px;margin:0}
+.geo dt{color:var(--mute)}
+.geo dd{margin:0;font-variant-numeric:tabular-nums;min-width:0;overflow-wrap:anywhere}
+.warn{font-size:14px;padding:10px 12px;border-radius:10px;background:var(--gold-soft);border:1px solid var(--gold-line)}
+.list{display:flex;flex-direction:column}
+.li{display:grid;grid-template-columns:58px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line-soft)}
+.li:first-child{border-top:0}
+.li .t{font-family:var(--f-label);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums}
+.li .who{min-width:0}
+.li .who b{display:block;font-weight:600}
+.li .who span{font-size:13px;color:var(--mute);overflow-wrap:anywhere}
+.li.free .t,.li.free .who{color:var(--dim)}
+.li.cont{padding-block:4px}
+.li.cont .t{color:var(--dim);font-size:15px}
+.li.cont .who{font-size:13px;color:var(--mute)}
+.li .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.li2{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line-soft)}
+.grp{font-family:var(--f-label);font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+
+/* Pestañas */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(9,9,10,.88);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.tabs-in{max-width:560px;margin:0 auto;display:flex}
+.tab{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0 9px;border:0;background:transparent;color:var(--mute);font-family:var(--f-label);font-weight:700;font-size:12px;letter-spacing:.16em;text-transform:uppercase}
+.tab svg{width:23px;height:23px}
+.tab[aria-selected="true"]{color:var(--gold-hi)}
+.tab[aria-selected="true"]::before{content:"";position:absolute;top:-1px;left:30%;right:30%;height:2px;border-radius:0 0 2px 2px;background:var(--gold-grad)}
+.tab .n{position:absolute;top:6px;left:calc(50% + 8px);min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:var(--gold-grad);color:var(--on-gold);font-size:11px;line-height:17px;letter-spacing:0}
+
+/* Pie */
+.pie{margin-top:40px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;color:var(--mute);font-size:14px}
+.verso{font-family:var(--f-display);font-weight:500;font-size:21px;line-height:1.2;color:var(--text)}
+.verso em{font-style:italic}
+.cita{font-family:var(--f-label);font-weight:600;letter-spacing:.2em;text-transform:uppercase;font-size:11px}
+
+/* Hoja inferior */
+.sheet{position:fixed;inset:0;z-index:40;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.66)}
+.sheet-in{width:100%;max-width:560px;max-height:90vh;max-height:90dvh;overflow:auto;background:var(--surface);border:1px solid var(--line);border-bottom:0;border-radius:22px 22px 0 0;padding-block:18px calc(22px + env(safe-area-inset-bottom,0px));padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px;animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(24px);opacity:.6}}
+.sheet-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.sheet-head h3{margin:0;font-family:var(--f-display);font-weight:600;font-size:27px;line-height:1.08}
+.x{border:1px solid var(--line);background:var(--surface-2);border-radius:50%;width:36px;height:36px;flex:none;font-size:20px;line-height:1}
+.resumen{display:grid;grid-template-columns:auto 1fr;gap:5px 14px;padding:12px 14px;border-radius:12px;background:var(--surface-2);margin:0}
+.resumen dt{color:var(--mute);font-size:14px}
+.resumen dd{margin:0;font-weight:600}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.f label,.f .lab{font-family:var(--f-label);font-weight:600;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+.f input,.f select,.f textarea{width:100%;padding:12px 13px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:16px}
+.f textarea{min-height:76px;resize:vertical}
+.f .hint{font-size:13px;color:var(--mute)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hor{display:grid;grid-template-columns:96px 1fr;gap:8px;align-items:center}
+.hor label{font-weight:600}
+.hor input{padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:16px;width:100%}
+.svc-ed{display:grid;grid-template-columns:1fr 1fr 1fr 36px;gap:6px;padding:10px;border:1px solid var(--line);border-radius:12px}
+.svc-ed .full{grid-column:1/-2}
+.svc-ed input,.svc-ed select{padding:9px 10px;border-radius:9px;border:1px solid var(--line);background:var(--bg);font-size:16px;width:100%;min-width:0}
+
+/* Aviso para instalar la app (iPhone y Android) */
+.install{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:var(--r);background:var(--surface);border:1px solid var(--gold-line);margin:0 0 14px}
+.install img{flex:none;width:42px;height:42px;border-radius:10px}
+.install div{min-width:0;flex:1;display:flex;flex-direction:column;gap:6px}
+.install b{font-weight:600}
+.install span{font-size:14px;color:var(--mute)}
+.install svg{width:17px;height:17px;vertical-align:-3px;color:var(--gold-hi)}
+.install .x{width:30px;height:30px;font-size:17px}
+.dias-ck{display:flex;flex-wrap:wrap;gap:6px}
+.dias-ck label{display:flex}
+.dias-ck input{position:absolute;opacity:0;pointer-events:none}
+.dias-ck span{padding:7px 11px;border-radius:999px;border:1px solid var(--line);font-family:var(--f-label);font-weight:700;font-size:13px;letter-spacing:.08em;color:var(--mute);cursor:pointer}
+.dias-ck input:checked+span{background:var(--gold-grad);color:var(--on-gold);border-color:transparent}
+.dias-ck input:focus-visible+span{outline:2px solid var(--gold);outline-offset:2px}
+.err{color:var(--stop);font-size:14px;min-height:1em;margin:0}
+.ok-big{font-family:var(--f-display);font-weight:600;font-size:36px;line-height:1}
+.check{display:flex;gap:10px;align-items:center}
+.check input{width:20px;height:20px;accent-color:var(--gold)}
+
+.toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:var(--text);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:600;font-size:15px;box-shadow:0 10px 28px rgba(0,0,0,.6);max-width:calc(100% - 32px);text-align:center}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <p class="demo" id="demo" hidden>Modo demo · los datos quedan solo en este celu</p>
+  <div id="install" hidden></div>
+
+  <header class="hero">
+    <img class="sticker" src="hero.webp" alt="Sticker de The Big Barber" width="560" height="695">
+    <div class="hero-txt">
+      <span class="kicker">Barbería · Peluquería · Cursos</span>
+      <h1 class="brand">The Big <em class="gold-text">Barber</em></h1>
+      <span class="by">por Ema Gutierrez</span>
+      <div class="status" id="estado" aria-live="polite"><i class="dot"></i><div><b id="estado-word">Cerrado</b><span id="estado-sub">Cargando…</span></div></div>
+      <span class="dir" id="dir"></span>
+    </div>
+  </header>
+
+  <main>
+    <section id="tab-turnos" class="tabpanel">
+      <div class="sec" id="mio-wrap" hidden></div>
+      <div class="sec" id="teaser-wrap" hidden></div>
+      <div class="sec">
+        <h2 class="title">Reservá tu <em class="gold-text">turno</em></h2>
+        <div class="seg" id="cats" role="group" aria-label="Categoría"></div>
+        <div id="promo-sel" hidden></div>
+        <div class="svcs" id="svcs" role="group" aria-label="Elegí el servicio"></div>
+      </div>
+      <div class="sec">
+        <h3 class="label">Día</h3>
+        <div class="days" id="days" role="group" aria-label="Elegí el día"></div>
+      </div>
+      <div class="sec">
+        <h3 class="label" id="slots-h">Horario</h3>
+        <div class="slots" id="slots"></div>
+      </div>
+    </section>
+
+    <section id="tab-promos" class="tabpanel" hidden>
+      <div class="sec">
+        <h2 class="title">Promos de la <em class="gold-text">semana</em></h2>
+        <div class="seg" id="promo-cats" role="group" aria-label="Filtrar promos"></div>
+        <div id="admin-promos" hidden><button class="btn ghost block" id="add-promo" type="button">+ Nueva promo</button></div>
+        <div id="promos" class="sec" style="margin-top:4px"></div>
+      </div>
+    </section>
+
+    <section id="tab-cursos" class="tabpanel" hidden>
+      <div class="sec">
+        <h2 class="title">Cursos con <em class="gold-text">Ema</em></h2>
+        <p class="muted" style="margin:0">Aprendé en el local, con modelos reales. Reservá tu lugar y Ema te confirma por WhatsApp.</p>
+        <div class="seg" id="curso-cats" role="group" aria-label="Filtrar cursos" hidden></div>
+        <div id="admin-cursos" hidden><button class="btn ghost block" id="add-curso" type="button">+ Nuevo curso</button></div>
+        <div id="cursos" class="sec" style="margin-top:4px"></div>
+      </div>
+    </section>
+
+    <section id="tab-panel" class="tabpanel" hidden>
+      <div class="sec">
+        <h2 class="title">Panel de <em class="gold-text">Ema</em></h2>
+        <div id="p-aviso"></div>
+        <div class="card" id="p-estado"></div>
+        <div class="card">
+          <h3 class="label">Agenda <small id="p-agenda-stat"></small></h3>
+          <div class="days" id="p-days" role="group" aria-label="Día de la agenda"></div>
+          <div class="list" id="p-agenda"></div>
+        </div>
+        <div class="card">
+          <h3 class="label">Inscripciones a cursos</h3>
+          <div class="list" id="p-insc"></div>
+        </div>
+        <div class="card">
+          <h3 class="label">Ajustes</h3>
+          <p class="small muted" style="margin:0">Horarios, servicios de hombre y mujer con precio y duración, WhatsApp, dirección y radio del local. Las promos y los cursos se editan desde sus pestañas.</p>
+          <button class="btn ghost" id="p-ajustes" type="button">Editar ajustes</button>
+        </div>
+        <button class="btn danger" id="p-salir" type="button">Salir del panel</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pie">
+    <hr class="rule" style="width:100%;margin-bottom:10px">
+    <span class="verso">Lo que Dios <em class="gold-text">ha prometido,</em><br>tus ojos lo verán.</span>
+    <span class="cita">Habacuc 2:3</span>
+    <button class="link" id="acceso" type="button" style="margin-top:10px">Acceso Ema</button>
+  </footer>
+</div>
+
+<nav class="tabs" aria-label="Secciones">
+  <div class="tabs-in" role="tablist">
+    <button class="tab" role="tab" data-tab="turnos" aria-selected="true" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="12" cy="15" r="1.4" fill="currentColor" stroke="none"/></svg>Turnos</button>
+    <button class="tab" role="tab" data-tab="promos" aria-selected="false" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3.5 12.6V4.5a1 1 0 0 1 1-1h8.1l8 8a1.5 1.5 0 0 1 0 2.1l-7 7a1.5 1.5 0 0 1-2.1 0z"/><circle cx="8.2" cy="8.2" r="1.6"/></svg>Promos<span class="n" id="promo-n" hidden></span></button>
+    <button class="tab" role="tab" data-tab="cursos" aria-selected="false" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3 17.5 4 7l5 4 3-6 3 6 5-4 1 10.5z"/><path d="M4 20.5h16"/></svg>Cursos</button>
+    <button class="tab" role="tab" data-tab="panel" aria-selected="false" type="button" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v3M21 12v3"/></svg>Panel</button>
+  </div>
+</nav>
+
+<div class="sheet" id="sheet" hidden><div class="sheet-in" id="sheet-in" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* ===================== CONFIGURACIÓN =====================
+   Sin Firebase (firebase: null) la app corre en MODO DEMO: todo queda guardado solo en el celular que la abre.
+   Para que los turnos le lleguen a Ema desde cualquier celu, pegá acá la config de Firebase
+   y el mail con el que Ema entra al panel (ver GUIA.md). */
+const CONFIG = {
+  firebase: {
+    apiKey: "AIzaSyCOfVH6ifjZTTMAwVY0hcrusvsda78T9LI",
+    authDomain: "the-big-barber.firebaseapp.com",
+    projectId: "the-big-barber",
+    storageBucket: "the-big-barber.firebasestorage.app",
+    messagingSenderId: "652311429161",
+    appId: "1:652311429161:web:da9414bf41ff92aed59c38"
+  },
+  // firebase: { apiKey:"...", authDomain:"...", projectId:"...", storageBucket:"...", messagingSenderId:"...", appId:"..." },
+  adminEmail: "thebigbarber356@gmail.com",
+  demoPin: "1234"
+};
+</script>
+<script>
+(function(){
+'use strict';
+
+/* ---------- utilidades ---------- */
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2,'0');
+const ymd = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const money = n => '$ ' + Math.round(Number(n)||0).toLocaleString('es-AR');
+const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const DIAS_C = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const DIAS_L = ['D','L','M','M','J','V','S'];
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const MESES_C = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const CATS = {hombre:'Hombre', mujer:'Mujer'};
+const CATS_CURSO = {todos:'', hombre:'Barbería', mujer:'Peluquería mujer'};
+const parseFecha = f => { const [y,m,d] = f.split('-').map(Number); return new Date(y, m-1, d); };
+const fromMin = m => pad(Math.floor(m/60)) + ':' + pad(m%60);
+const toMin = h => { const [a,b] = h.split(':').map(Number); return a*60 + b; };
+const nowMin = () => { const d = new Date(); return d.getHours()*60 + d.getMinutes(); };
+const nid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const digits = s => String(s||'').replace(/\D/g,'');
+const fechaLarga = f => { const d = parseFecha(f); return DIAS[d.getDay()] + ' ' + d.getDate() + ' de ' + MESES[d.getMonth()]; };
+const fechaCorta = f => { const d = parseFecha(f); return DIAS_C[d.getDay()] + ' ' + d.getDate() + ' ' + MESES_C[d.getMonth()]; };
+const hhmm = ts => { const d = new Date(ts); return pad(d.getHours())+':'+pad(d.getMinutes()); };
+const durTxt = m => m >= 60 ? (Math.floor(m/60) + ' h' + (m%60 ? ' ' + (m%60) + ' min' : '')) : m + ' min';
+const slotId = (f, min) => f + '_' + fromMin(min).replace(':','');
+const idHora = id => id.slice(11,13) + ':' + id.slice(13,15);
+const ls = {
+  get(k, def){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch(e){ return def; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+};
+function diasTxt(dias){
+  if (!dias || !dias.length || dias.length === 7) return 'Todos los días';
+  const o = [1,2,3,4,5,6,0].filter(w => dias.includes(w)).map(w => DIAS[w].toLowerCase());
+  return o.length === 1 ? 'Solo ' + o[0] + 's' : o.slice(0,-1).join(', ') + ' y ' + o[o.length-1];
+}
+function parseRangos(txt){
+  const out = [];
+  String(txt||'').split(/[,;y]+/).forEach(part => {
+    const m = part.trim().match(/^(\d{1,2})(?:[:.](\d{2}))?\s*(?:-|–|a)\s*(\d{1,2})(?:[:.](\d{2}))?$/i);
+    if (!m) return;
+    const a = (+m[1])*60 + (+(m[2]||0)), b = (+m[3])*60 + (+(m[4]||0));
+    if (b > a && b <= 24*60) out.push([a,b]);
+  });
+  return out;
+}
+function distM(a, b){
+  const R = 6371000, toR = x => x*Math.PI/180;
+  const dLat = toR(b.lat-a.lat), dLng = toR(b.lng-a.lng);
+  const h = Math.sin(dLat/2)**2 + Math.cos(toR(a.lat))*Math.cos(toR(b.lat))*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+function waLink(num, msg){ const n = digits(num); return n ? 'https://wa.me/'+n+'?text='+encodeURIComponent(msg) : ''; }
+
+/* ---------- datos por defecto ---------- */
+const DEFAULT_NEG = {
+  whatsapp: '', direccion: '',
+  duracion: 30,            // intervalo de la agenda en minutos
+  diasAdelante: 14,
+  horarios: ['', '', '10:00-13:00, 16:00-21:00', '10:00-13:00, 16:00-21:00', '10:00-13:00, 16:00-21:00', '10:00-13:00, 16:00-21:00', '10:00-14:00, 16:00-21:00'], // 0 = domingo
+  servicios: [
+    {n:'Corte', p:10000, d:30, c:'hombre'},
+    {n:'Corte + barba', p:14000, d:45, c:'hombre'},
+    {n:'Barba', p:6000, d:30, c:'hombre'},
+    {n:'Corte niño', p:8000, d:30, c:'hombre'},
+    {n:'Corte mujer', p:12000, d:45, c:'mujer'},
+    {n:'Corte + brushing', p:18000, d:60, c:'mujer'},
+    {n:'Brushing', p:9000, d:45, c:'mujer'},
+    {n:'Color raíz', p:25000, d:90, c:'mujer'},
+    {n:'Mechas / balayage', p:45000, d:150, c:'mujer'},
+    {n:'Alisado / keratina', p:40000, d:120, c:'mujer'}
+  ],
+  local: null, radio: 60
+};
+
+/* ---------- almacenamiento: DEMO (en el celu) ---------- */
+function LocalStore(){
+  const KEY = 'tbb-demo-v2';
+  let st = ls.get(KEY, null);
+  if (!st) st = seedDemo();
+  const subs = new Set();
+  const save = () => { ls.set(KEY, st); subs.forEach(f => f()); };
+  const on = fn => { subs.add(fn); fn(); return () => subs.delete(fn); };
+  const lista = obj => Object.entries(obj).map(([id,v]) => Object.assign({id}, v));
+  let admin = false; try { admin = sessionStorage.getItem('tbb-admin') === '1'; } catch(e){}
+  const authSubs = new Set();
+  const setAdmin = v => { admin = v; try { v ? sessionStorage.setItem('tbb-admin','1') : sessionStorage.removeItem('tbb-admin'); } catch(e){} authSubs.forEach(f => f(v)); };
+  return {
+    demo: true,
+    onAuth(cb){ authSubs.add(cb); cb(admin); return () => authSubs.delete(cb); },
+    async login(_m, pin){ if (String(pin).trim() !== String(CONFIG.demoPin)) throw new Error('PIN incorrecto.'); setAdmin(true); },
+    async logout(){ setAdmin(false); },
+    subNegocio(cb){ return on(() => cb(st.negocio)); },
+    async saveNegocio(n){ st.negocio = Object.assign({}, st.negocio, n, {guardado:true}); save(); },
+    subEstado(cb){ return on(() => cb(st.estado)); },
+    async setEstado(e){ st.estado = Object.assign({}, st.estado, e); save(); },
+    subOcupados(desde, hasta, cb){ return on(() => { const o = {}; for (const [id,v] of Object.entries(st.ocupados)) if (v.fecha >= desde && v.fecha <= hasta) o[id] = v; cb(o); }); },
+    async reservar(t){
+      if (t.slots.some(id => st.ocupados[id])) { const e = new Error('ocupado'); e.code = 'ocupado'; throw e; }
+      const id = t.slots[0];
+      t.slots.forEach(s => st.ocupados[s] = {fecha:t.fecha, turno:id});
+      st.turnos[id] = Object.assign({}, t, {creado:Date.now()}); save(); return id;
+    },
+    subTurnos(fecha, cb){ return on(() => cb(lista(st.turnos).filter(v => v.fecha === fecha))); },
+    async liberar(id, slots){ const t = st.turnos[id]; (slots || (t && t.slots) || [id]).forEach(s => delete st.ocupados[s]); delete st.ocupados[id]; delete st.turnos[id]; save(); },
+    async bloquear(id, fecha){ st.ocupados[id] = {fecha, bloqueado:true}; save(); },
+    subCursos(cb){ return on(() => cb(lista(st.cursos))); },
+    async saveCurso(c){ const id = c.id || nid(); const d = Object.assign({}, c); delete d.id; st.cursos[id] = Object.assign({inscriptos:0, creado:Date.now()}, st.cursos[id]||{}, d); save(); return id; },
+    async deleteCurso(id){ delete st.cursos[id]; save(); },
+    async inscribir(curso, p){
+      const c = st.cursos[curso.id]; if (!c) throw new Error('El curso ya no está disponible.');
+      if (+c.cupo > 0 && (+c.inscriptos||0) >= +c.cupo) { const e = new Error('lleno'); e.code = 'lleno'; throw e; }
+      c.inscriptos = (+c.inscriptos||0) + 1;
+      st.inscripciones[nid()] = Object.assign({cursoId:curso.id, curso:c.titulo, creado:Date.now()}, p); save();
+    },
+    subInscripciones(cb){ return on(() => cb(lista(st.inscripciones))); },
+    async deleteInscripcion(id, cursoId){ delete st.inscripciones[id]; const c = st.cursos[cursoId]; if (c && c.inscriptos > 0) c.inscriptos--; save(); },
+    subPromos(cb){ return on(() => cb(lista(st.promos))); },
+    async savePromo(p){ const id = p.id || nid(); const d = Object.assign({}, p); delete d.id; st.promos[id] = Object.assign({creado:Date.now()}, st.promos[id]||{}, d); save(); return id; },
+    async deletePromo(id){ delete st.promos[id]; save(); }
+  };
+}
+function seedDemo(){
+  const st = { negocio: JSON.parse(JSON.stringify(DEFAULT_NEG)), estado:{abierto:false, modo:'auto', actualizado:0}, ocupados:{}, turnos:{}, inscripciones:{}, cursos:{}, promos:{} };
+  const ej = [['Lucas M.','Corte',30,10000],['Sofía L.','Color raíz',90,25000],['Franco G.','Corte + barba',45,14000],['Martina R.','Brushing',45,9000],['Tomás R.','Barba',30,6000],['Agus V.','Corte niño',30,8000],['Carla P.','Corte + brushing',60,18000]];
+  let k = 0;
+  for (let i=0; i<6 && k<ej.length; i++){
+    const d = new Date(); d.setDate(d.getDate()+i); const f = ymd(d);
+    const rangos = parseRangos(st.negocio.horarios[d.getDay()]);
+    const starts = [];
+    rangos.forEach(([a,b]) => { for (let t=a; t+30<=b; t+=30) if (i>0 || t > nowMin()+30) starts.push([t,b]); });
+    [1,5,Math.floor(starts.length*0.65)].forEach(ix => {
+      if (k >= ej.length || !starts[ix]) return;
+      const [t,b] = starts[ix], n = Math.ceil(ej[k][2]/30);
+      if (t + n*30 > b) return;
+      const slots = []; for (let j=0;j<n;j++) slots.push(slotId(f, t+j*30));
+      if (slots.some(s => st.ocupados[s])) return;
+      slots.forEach(s => st.ocupados[s] = {fecha:f, turno:slots[0]});
+      st.turnos[slots[0]] = {fecha:f, hora:fromMin(t), nombre:ej[k][0]+' (ejemplo)', tel:'', servicio:ej[k][1], precio:ej[k][3], dur:ej[k][2], slots, creado:Date.now()};
+      k++;
+    });
+  }
+  const en = n => { const d = new Date(); d.setDate(d.getDate()+n); return ymd(d); };
+  st.promos = {
+    p1: {titulo:'Corte + barba martes y miércoles', detalle:'El combo completo a precio de semana tranqui. Incluye perfilado con navaja.', precio:11000, antes:14000, cat:'hombre', dias:[2,3], hasta:'', turno:true, dur:45, activo:true, creado:1},
+    p2: {titulo:'Brushing + hidratación', detalle:'Hidratación profunda con ampolla y brushing de terminación.', precio:12000, antes:16000, cat:'mujer', dias:[], hasta:en(21), turno:true, dur:60, activo:true, creado:2},
+    p3: {titulo:'Papá + hijo', detalle:'Corte para los dos el mismo día. Avisale a Ema por WhatsApp y te arma los turnos seguidos.', precio:15000, antes:18000, cat:'hombre', dias:[6], hasta:'', turno:false, dur:60, activo:true, creado:3},
+    p4: {titulo:'Inscripción al curso desde cero a mitad de precio', detalle:'Para los que se anoten antes del cierre de inscripciones.', precio:15000, antes:30000, cat:'todos', dias:[], hasta:en(10), turno:false, dur:0, activo:true, creado:4}
+  };
+  st.cursos = {
+    c1: {titulo:'Barbería desde cero', detalle:'De cero a tus primeros clientes: herramientas, cortes clásicos, degradé, perfilado y atención al cliente. Trabajás con modelos reales.', cat:'hombre', inicio:'Noviembre 2026', duracion:'3 meses · 1 clase por semana', modalidad:'Presencial en el local', inscripcion:30000, valor:55000, valorDetalle:'por mes', cupo:8, inscriptos:3, activo:true, creado:1},
+    c2: {titulo:'Fade y degradé intensivo', detalle:'Para quienes ya cortan: transiciones limpias, low, mid y high fade, skin fade y terminaciones con navaja.', cat:'hombre', inicio:'Sábado 7 de noviembre', duracion:'2 jornadas de 4 horas', modalidad:'Presencial · traé tu máquina', inscripcion:0, valor:70000, valorDetalle:'total', cupo:6, inscriptos:5, activo:true, creado:2},
+    c3: {titulo:'Colorimetría y mechas', detalle:'Círculo cromático, niveles y reflejos, decoloración segura, mechas, balayage y matización.', cat:'mujer', inicio:'A confirmar', duracion:'6 clases', modalidad:'Presencial', inscripcion:20000, valor:40000, valorDetalle:'por mes', cupo:6, inscriptos:1, activo:true, creado:3}
+  };
+  return st;
+}
+
+/* ---------- almacenamiento: FIREBASE (en vivo) ---------- */
+function loadScript(src){ return new Promise((ok, ko) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => ko(new Error('No se pudo cargar '+src)); document.head.appendChild(s); }); }
+async function FireStore(){
+  const base = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  await loadScript(base+'firebase-app-compat.js');
+  await Promise.all([loadScript(base+'firebase-auth-compat.js'), loadScript(base+'firebase-firestore-compat.js')]);
+  firebase.initializeApp(CONFIG.firebase);
+  const db = firebase.firestore(), auth = firebase.auth();
+  const FV = firebase.firestore.FieldValue;
+  const isAdmin = u => !!u && (!CONFIG.adminEmail || (u.email||'').toLowerCase() === CONFIG.adminEmail.toLowerCase());
+  const list = snap => snap.docs.map(d => Object.assign({id:d.id}, d.data()));
+  const quiet = err => console.warn(err);
+  return {
+    demo: false,
+    onAuth(cb){ return auth.onAuthStateChanged(u => cb(isAdmin(u))); },
+    async login(mail, pass){
+      try { const r = await auth.signInWithEmailAndPassword(mail.trim(), pass); if (!isAdmin(r.user)) { await auth.signOut(); throw new Error('Esa cuenta no tiene acceso al panel.'); } }
+      catch(e){ throw new Error(e.code && e.code.startsWith('auth/') ? 'Mail o contraseña incorrectos.' : e.message); }
+    },
+    async logout(){ await auth.signOut(); },
+    subNegocio(cb){ return db.doc('config/negocio').onSnapshot(s => cb(s.exists ? s.data() : null), quiet); },
+    async saveNegocio(n){ await db.doc('config/negocio').set(Object.assign({}, n, {guardado:true}), {merge:true}); },
+    subEstado(cb){ return db.doc('config/estado').onSnapshot(s => cb(s.exists ? s.data() : null), quiet); },
+    async setEstado(e){ await db.doc('config/estado').set(e, {merge:true}); },
+    subOcupados(desde, hasta, cb){ return db.collection('ocupados').where('fecha','>=',desde).where('fecha','<=',hasta).onSnapshot(s => { const o = {}; s.docs.forEach(d => o[d.id] = d.data()); cb(o); }, quiet); },
+    async reservar(t){
+      const id = t.slots[0], b = db.batch();
+      t.slots.forEach(s => b.set(db.doc('ocupados/'+s), {fecha:t.fecha, turno:id}));
+      b.set(db.doc('turnos/'+id), Object.assign({}, t, {creado:Date.now()}));
+      try { await b.commit(); } catch(e){ const x = new Error('ocupado'); x.code = 'ocupado'; throw x; }
+      return id;
+    },
+    subTurnos(fecha, cb){ return db.collection('turnos').where('fecha','==',fecha).onSnapshot(s => cb(list(s)), quiet); },
+    async liberar(id, slots){ const b = db.batch(); Array.from(new Set((slots || []).concat(id))).forEach(s => b.delete(db.doc('ocupados/'+s))); b.delete(db.doc('turnos/'+id)); await b.commit(); },
+    async bloquear(id, fecha){ await db.doc('ocupados/'+id).set({fecha, bloqueado:true}); },
+    subCursos(cb){ return db.collection('cursos').onSnapshot(s => cb(list(s)), quiet); },
+    async saveCurso(c){ const id = c.id || nid(); const d = Object.assign({}, c); delete d.id; if (!c.id) d.creado = Date.now(); await db.doc('cursos/'+id).set(d, {merge:true}); return id; },
+    async deleteCurso(id){ await db.doc('cursos/'+id).delete(); },
+    async inscribir(curso, p){
+      const b = db.batch();
+      b.set(db.collection('inscripciones').doc(), Object.assign({cursoId:curso.id, curso:curso.titulo, creado:Date.now()}, p));
+      b.update(db.doc('cursos/'+curso.id), {inscriptos: FV.increment(1)});
+      try { await b.commit(); } catch(e){ const x = new Error('lleno'); x.code = 'lleno'; throw x; }
+    },
+    subInscripciones(cb){ return db.collection('inscripciones').onSnapshot(s => cb(list(s)), quiet); },
+    async deleteInscripcion(id, cursoId){ const b = db.batch(); b.delete(db.doc('inscripciones/'+id)); if (cursoId) b.update(db.doc('cursos/'+cursoId), {inscriptos: FV.increment(-1)}); await b.commit(); },
+    subPromos(cb){ return db.collection('promos').onSnapshot(s => cb(list(s)), quiet); },
+    async savePromo(p){ const id = p.id || nid(); const d = Object.assign({}, p); delete d.id; if (!p.id) d.creado = Date.now(); await db.doc('promos/'+id).set(d, {merge:true}); return id; },
+    async deletePromo(id){ await db.doc('promos/'+id).delete(); }
+  };
+}
+
+/* ---------- estado de la app ---------- */
+const S = {
+  neg: JSON.parse(JSON.stringify(DEFAULT_NEG)), negGuardado: false,
+  estado: {abierto:false, modo:'auto', actualizado:0},
+  ocupados: {}, cursos: [], promos: [], admin: false,
+  tab: 'turnos', dia: null, cat: ls.get('tbb-cat', 'hombre'), sel: null,
+  promoCat: 'todas', cursoCat: 'todos',
+  pDia: null, pTurnos: [], insc: []
+};
+let store = null;
+let unsubAdmin = [], unsubPTurnos = null, unsubOcup = null;
+
+const step = () => Math.max(10, +S.neg.duracion || 30);
+const catOf = s => s.c === 'mujer' ? 'mujer' : 'hombre';
+const svcsCat = cat => (S.neg.servicios || []).map((s,i) => Object.assign({i}, s)).filter(s => catOf(s) === cat);
+const catsConServicios = () => Object.keys(CATS).filter(c => svcsCat(c).length);
+const hoyYmd = () => ymd(new Date());
+const promoVigente = p => p.activo !== false && (!p.hasta || p.hasta >= hoyYmd());
+const promosVisibles = () => S.promos.filter(promoVigente).sort((a,b) => (a.creado||0) - (b.creado||0));
+const promoAplicaDia = (p, f) => !p.dias || !p.dias.length || p.dias.includes(parseFecha(f).getDay());
+const descuento = p => (+p.antes > +p.precio && +p.precio > 0) ? Math.round((1 - p.precio/p.antes)*100) : 0;
+
+function itemSel(){
+  if (S.sel && S.sel.promo) {
+    const p = S.promos.find(x => x.id === S.sel.promo);
+    if (p && promoVigente(p) && p.turno) return {nombre:p.titulo, precio:+p.precio||0, dur:Math.max(10, +p.dur||step()), cat:p.cat, dias:p.dias||[], promo:p};
+    S.sel = null;
+  }
+  const list = svcsCat(S.cat);
+  if (!list.length) return null;
+  let i = S.sel && S.sel.svc != null ? S.sel.svc : null;
+  if (i == null || !list.some(s => s.i === i)) i = list[0].i;
+  S.sel = {svc:i};
+  const s = S.neg.servicios[i];
+  return {nombre:s.n, precio:+s.p||0, dur:Math.max(10, +s.d||step()), cat:catOf(s), dias:[]};
+}
+// Horarios de inicio de un día para un servicio de "dur" minutos (puede ocupar varios turnos seguidos).
+function startsDelDia(f, dur){
+  const w = parseFecha(f).getDay(), st = step(), k = Math.max(1, Math.ceil(dur/st));
+  const lim = f === hoyYmd() ? nowMin()+10 : -1;
+  const out = [];
+  parseRangos(S.neg.horarios[w]).forEach(([a,b]) => {
+    for (let t=a; t+st<=b; t+=st){
+      if (t <= lim) continue;
+      const ids = []; for (let j=0; j<k; j++) ids.push(slotId(f, t+j*st));
+      const libre = !S.ocupados[ids[0]];
+      const ok = t + k*st <= b && ids.every(id => !S.ocupados[id]);
+      out.push({h:fromMin(t), ok, libre, slots:ids});
+    }
+  });
+  return out;
+}
+function slotsDelDia(f){
+  const w = parseFecha(f).getDay(), st = step(), res = [];
+  parseRangos(S.neg.horarios[w]).forEach(([a,b]) => { for (let t=a; t+st<=b; t+=st) res.push(fromMin(t)); });
+  return res;
+}
+// Dentro del horario de hoy, con 30 min de margen antes y después de cada franja.
+function enHorario(){
+  const n = nowMin();
+  return parseRangos(S.neg.horarios[new Date().getDay()]).some(([a,b]) => n >= a-30 && n <= b+30);
+}
+function estadoVigente(){
+  const e = S.estado || {};
+  if (!e.abierto || e.modo === 'cerrado') return false;
+  if (!e.actualizado || ymd(new Date(e.actualizado)) !== hoyYmd()) return false;
+  if (e.modo === 'abierto') return true;
+  // Automático: fuera del horario se muestra cerrado aunque no haya llegado la lectura de "me fui"
+  // (en iPhone la ubicación no se sigue con la app cerrada).
+  return enHorario();
+}
+function diasLista(){
+  const n = Math.min(60, Math.max(1, +S.neg.diasAdelante || 14));
+  const out = []; const d0 = new Date();
+  for (let i=0; i<n; i++){ const d = new Date(d0); d.setDate(d0.getDate()+i); out.push(ymd(d)); }
+  return out;
+}
+function proximaApertura(){
+  const d0 = new Date();
+  for (let i=0; i<8; i++){
+    const d = new Date(d0); d.setDate(d0.getDate()+i);
+    for (const [a,b] of parseRangos(S.neg.horarios[d.getDay()])){
+      if (i === 0 && a <= nowMin()) { if (b > nowMin()) return {ahora:true, hasta:b}; continue; }
+      return {i, d, a};
+    }
+  }
+  return null;
+}
+
+/* ---------- render: estado ---------- */
+function renderEstado(){
+  const on = estadoVigente();
+  $('#estado').classList.toggle('on', on);
+  $('#estado-word').textContent = on ? 'Abierto' : 'Cerrado';
+  let sub;
+  if (on) sub = 'Ema está en el local' + (S.estado.actualizado ? ' desde las ' + hhmm(S.estado.actualizado) : '');
+  else if (S.estado.modo === 'cerrado') sub = S.estado.nota || 'Hoy no atiende';
+  else {
+    const p = proximaApertura();
+    if (!p) sub = 'Sin horarios cargados';
+    else if (p.ahora) sub = 'Ema todavía no llegó · hoy hasta las ' + fromMin(p.hasta);
+    else if (p.i === 0) sub = 'Hoy abre a las ' + fromMin(p.a);
+    else if (p.i === 1) sub = 'Mañana abre a las ' + fromMin(p.a);
+    else sub = 'Abre el ' + DIAS[p.d.getDay()].toLowerCase() + ' a las ' + fromMin(p.a);
+  }
+  $('#estado-sub').textContent = sub;
+  const q = S.neg.local ? S.neg.local.lat+','+S.neg.local.lng : S.neg.direccion;
+  const dir = $('#dir');
+  dir.innerHTML = (S.neg.direccion ? esc(S.neg.direccion) + ' · ' : '') + (q ? '<a href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)+'" target="_blank" rel="noopener">CÓMO LLEGAR ↗</a>' : '');
+  dir.hidden = !q;
+  if (S.tab === 'panel') renderPEstado();
+}
+
+/* ---------- render: turnos ---------- */
+function dayButtons(sel, item){
+  return diasLista().map((f,i) => {
+    const w = parseFecha(f).getDay();
+    const abre = parseRangos(S.neg.horarios[w]).length > 0;
+    let sub = '', off = !abre;
+    if (!abre) sub = 'cerrado';
+    else if (item) {
+      if (item.promo && !promoAplicaDia(item.promo, f)) { sub = 'no aplica'; off = true; }
+      else { const n = startsDelDia(f, item.dur).filter(s => s.ok).length; sub = n ? n + ' libres' : 'completo'; }
+    }
+    return '<button type="button" class="day'+(off?' off':'')+'" data-dia="'+f+'" aria-pressed="'+(f===sel)+'"><span>'+(i===0?'Hoy':DIAS_C[w])+'</span><b>'+parseFecha(f).getDate()+'</b><i>'+sub+'</i></button>';
+  }).join('');
+}
+function renderTurnos(){
+  const cats = catsConServicios();
+  if (!cats.includes(S.cat) && cats.length) S.cat = cats[0];
+  const item = itemSel();
+  // categoría
+  const segCats = $('#cats');
+  segCats.hidden = cats.length < 2 || !!(item && item.promo);
+  segCats.innerHTML = cats.map(c => '<button type="button" data-cat="'+c+'" aria-pressed="'+(c===S.cat)+'">'+CATS[c]+'</button>').join('');
+  // promo elegida o servicios
+  const ps = $('#promo-sel');
+  if (item && item.promo) {
+    ps.hidden = false;
+    ps.innerHTML = '<div class="promo-sel"><div><span>Promo elegida · '+esc(diasTxt(item.dias))+' · '+durTxt(item.dur)+'</span><b>'+esc(item.nombre)+' · '+money(item.precio)+'</b></div><button type="button" class="btn ghost sm" data-quitar-promo>Quitar</button></div>';
+    $('#svcs').innerHTML = '';
+    $('#svcs').hidden = true;
+  } else {
+    ps.hidden = true; ps.innerHTML = '';
+    $('#svcs').hidden = false;
+    const list = svcsCat(S.cat);
+    $('#svcs').innerHTML = list.length ? list.map(s => '<button type="button" class="svc" data-svc="'+s.i+'" aria-pressed="'+(S.sel && S.sel.svc===s.i)+'"><span class="n">'+esc(s.n)+'</span><span class="p">'+money(s.p)+'</span><span class="d">'+durTxt(Math.max(10, +s.d||step()))+'</span></button>').join('') : '<div class="empty" style="grid-column:1/-1">Ema todavía no cargó los servicios.</div>';
+  }
+  // días
+  const dias = diasLista();
+  const okDia = f => item && (!item.promo || promoAplicaDia(item.promo, f)) && startsDelDia(f, item.dur).some(s => s.ok);
+  if (!S.dia || !dias.includes(S.dia)) S.dia = dias.find(okDia) || dias[0];
+  const strip = $('#days'); const sl = strip.scrollLeft;
+  strip.innerHTML = dayButtons(S.dia, item); strip.scrollLeft = sl;
+  // horarios
+  const box = $('#slots');
+  if (!item) { $('#slots-h').innerHTML = 'Horario'; box.innerHTML = ''; renderMio(); return; }
+  const w = parseFecha(S.dia).getDay();
+  const abre = parseRangos(S.neg.horarios[w]).length > 0;
+  const starts = startsDelDia(S.dia, item.dur);
+  const libres = starts.filter(s => s.ok);
+  $('#slots-h').innerHTML = 'Horario <small>' + esc(fechaLarga(S.dia)) + (starts.length ? ' · ' + libres.length + ' libres' : '') + '</small>';
+  if (item.promo && !promoAplicaDia(item.promo, S.dia)) box.innerHTML = '<div class="empty" style="grid-column:1/-1">Esta promo vale '+esc(diasTxt(item.dias).toLowerCase())+'. Elegí uno de esos días.</div>';
+  else if (!abre) box.innerHTML = '<div class="empty" style="grid-column:1/-1">Este día Ema no atiende. Elegí otro día.</div>';
+  else if (!starts.length) box.innerHTML = '<div class="empty" style="grid-column:1/-1">Ya no quedan horarios hoy. Probá mañana.</div>';
+  else box.innerHTML = starts.map(s => '<button type="button" class="slot'+(s.libre?'':' taken')+'" data-hora="'+s.h+'"'+(s.ok?'':' disabled aria-label="'+s.h+' no disponible"')+'>'+s.h+'</button>').join('')
+    + (item.dur > step() && libres.length < starts.filter(s => s.libre).length ? '<p class="small muted" style="grid-column:1/-1;margin:0">'+esc(item.nombre)+' lleva '+durTxt(item.dur)+': solo se muestran los horarios con tiempo libre suficiente.</p>' : '');
+  renderTeaser();
+  renderMio();
+}
+function renderTeaser(){
+  const w = $('#teaser-wrap');
+  const hoy = hoyYmd();
+  const ps = promosVisibles().filter(p => p.cat === 'todos' || !p.cat || p.cat === S.cat);
+  if (!ps.length || (S.sel && S.sel.promo)) { w.hidden = true; w.innerHTML = ''; return; }
+  const hoyP = ps.filter(p => promoAplicaDia(p, hoy));
+  w.hidden = false;
+  w.innerHTML = '<button type="button" class="teaser" data-tab="promos"><span class="tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3.5 12.6V4.5a1 1 0 0 1 1-1h8.1l8 8a1.5 1.5 0 0 1 0 2.1l-7 7a1.5 1.5 0 0 1-2.1 0z"/><circle cx="8.2" cy="8.2" r="1.6"/></svg></span>'
+    + '<div><b>'+(hoyP.length ? (hoyP.length === 1 ? 'Hoy hay 1 promo' : 'Hoy hay '+hoyP.length+' promos') : ps.length + (ps.length===1?' promo':' promos')+' esta semana')+'</b><span>'+esc((hoyP[0]||ps[0]).titulo)+'</span></div><span class="go">VER</span></button>';
+}
+function renderMio(){
+  const hoy = hoyYmd();
+  const mios = ls.get('tbb-mis-turnos', []).filter(t => t.fecha > hoy || (t.fecha === hoy && toMin(t.hora) >= nowMin()-30));
+  ls.set('tbb-mis-turnos', mios);
+  const w = $('#mio-wrap');
+  if (!mios.length) { w.hidden = true; w.innerHTML = ''; return; }
+  w.hidden = false;
+  w.innerHTML = '<h3 class="label">Tus turnos</h3>' + mios.map(t => {
+    const vivo = !!S.ocupados[t.id];
+    const wa = waLink(S.neg.whatsapp, 'Hola Ema! Te escribo por mi turno del ' + fechaLarga(t.fecha) + ' a las ' + t.hora + '. Soy ' + t.nombre + '.');
+    return '<div class="mio'+(vivo?'':' cancel')+'"><strong>'+esc(fechaLarga(t.fecha))+' · '+t.hora+'</strong><span>'+esc(t.servicio)+(vivo?'':' · <b>Este turno fue cancelado</b>')+'</span>'
+      + '<span class="small muted">'+(vivo?'Para cancelarlo o cambiarlo, avisale a Ema.':'Escribile a Ema o sacá otro turno.')+'</span>'
+      + '<span class="row">'+(wa?'<a class="btn wa sm" href="'+wa+'" target="_blank" rel="noopener">Escribirle a Ema</a>':'')+'<button type="button" class="link" data-olvidar="'+esc(t.id)+'">Quitar de esta lista</button></span></div>';
+  }).join('');
+}
+
+/* ---------- render: promos ---------- */
+function renderPromos(){
+  const n = promosVisibles().length;
+  const badge = $('#promo-n'); badge.hidden = !n; badge.textContent = n;
+  $('#admin-promos').hidden = !S.admin;
+  $('#promo-cats').innerHTML = [['todas','Todas'],['hombre','Hombre'],['mujer','Mujer']].map(([k,l]) => '<button type="button" data-promo-cat="'+k+'" aria-pressed="'+(S.promoCat===k)+'">'+l+'</button>').join('');
+  const base = S.admin ? S.promos.slice().sort((a,b) => (a.creado||0)-(b.creado||0)) : promosVisibles();
+  const ps = base.filter(p => S.promoCat === 'todas' || !p.cat || p.cat === 'todos' || p.cat === S.promoCat);
+  const box = $('#promos');
+  if (!ps.length) { box.innerHTML = '<div class="empty">'+(S.admin ? 'No hay promos. Tocá “Nueva promo” para cargar la primera.' : 'No hay promos activas en este momento. Volvé a mirar pronto.')+'</div>'; return; }
+  const hoy = hoyYmd();
+  box.innerHTML = ps.map(p => {
+    const desc = descuento(p), vig = promoVigente(p);
+    const chips = [];
+    if (p.cat && p.cat !== 'todos') chips.push('<span class="chip gold">'+CATS[p.cat]+'</span>');
+    chips.push('<span class="chip">'+esc(diasTxt(p.dias))+'</span>');
+    if (p.hasta) { const d = parseFecha(p.hasta); chips.push('<span class="chip">Hasta el '+d.getDate()+' de '+MESES[d.getMonth()]+'</span>'); }
+    if (p.turno && +p.dur) chips.push('<span class="chip">'+durTxt(+p.dur)+'</span>');
+    if (S.admin && p.activo === false) chips.unshift('<span class="chip warn">Oculta</span>');
+    else if (S.admin && !vig) chips.unshift('<span class="chip warn">Vencida</span>');
+    const wa = waLink(S.neg.whatsapp, 'Hola Ema! Quiero la promo "'+p.titulo+'" que vi en la app.');
+    const hoyVale = promoAplicaDia(p, hoy);
+    return '<article class="card-p'+(desc?' has-badge':'')+'">'
+      + (desc ? '<span class="badge">−'+desc+'%</span>' : '')
+      + '<h3>'+esc(p.titulo)+'</h3>'
+      + (p.detalle ? '<p>'+esc(p.detalle)+'</p>' : '')
+      + (+p.precio ? '<div class="precio-promo"><b class="gold-text">'+money(p.precio)+'</b>'+(+p.antes > +p.precio ? '<s>'+money(p.antes)+'</s>' : '')+'</div>' : '')
+      + '<div class="chips">'+chips.join('')+'</div>'
+      + '<div class="row">'
+      + (p.turno && vig ? '<button type="button" class="btn" data-usar-promo="'+esc(p.id)+'">Sacar turno con esta promo</button>' : '')
+      + (!p.turno && wa && vig ? '<a class="btn" href="'+wa+'" target="_blank" rel="noopener">Pedirla por WhatsApp</a>' : '')
+      + (!p.turno && !wa && vig ? '<span class="small muted">Consultala en el local.</span>' : '')
+      + (S.admin ? '<button type="button" class="btn ghost sm" data-editar-promo="'+esc(p.id)+'">Editar</button>' : '')
+      + '</div></article>';
+  }).join('');
+}
+
+/* ---------- render: cursos ---------- */
+function renderCursos(){
+  const box = $('#cursos');
+  $('#admin-cursos').hidden = !S.admin;
+  const todos = S.cursos.filter(c => S.admin || c.activo !== false).sort((a,b) => (a.creado||0) - (b.creado||0));
+  const hayAmbos = todos.some(c => c.cat === 'hombre') && todos.some(c => c.cat === 'mujer');
+  const seg = $('#curso-cats'); seg.hidden = !hayAmbos;
+  if (!hayAmbos) S.cursoCat = 'todos';
+  seg.innerHTML = [['todos','Todos'],['hombre','Barbería'],['mujer','Mujer']].map(([k,l]) => '<button type="button" data-curso-cat="'+k+'" aria-pressed="'+(S.cursoCat===k)+'">'+l+'</button>').join('');
+  const cs = todos.filter(c => S.cursoCat === 'todos' || !c.cat || c.cat === 'todos' || c.cat === S.cursoCat);
+  if (!cs.length) { box.innerHTML = '<div class="empty">Todavía no hay cursos publicados.'+(S.admin?' Tocá “Nuevo curso” para cargar el primero.':' Volvé a mirar pronto.')+'</div>'; return; }
+  box.innerHTML = cs.map(c => {
+    const cupo = +c.cupo || 0, ins = +c.inscriptos || 0, lleno = cupo > 0 && ins >= cupo;
+    const quedan = cupo ? Math.max(0, cupo - ins) : null;
+    const chips = [];
+    if (S.admin && c.activo === false) chips.push('<span class="chip warn">Oculto</span>');
+    if (CATS_CURSO[c.cat]) chips.push('<span class="chip gold">'+CATS_CURSO[c.cat]+'</span>');
+    [c.inicio && 'Empieza: '+c.inicio, c.duracion, c.modalidad].filter(Boolean).forEach(t => chips.push('<span class="chip">'+esc(t)+'</span>'));
+    const precios = []
+      .concat(+c.inscripcion > 0 ? ['<div class="precio"><span>Inscripción</span><b>'+money(c.inscripcion)+'</b><small>para reservar tu lugar</small></div>'] : [])
+      .concat(+c.valor > 0 ? ['<div class="precio"><span>Valor</span><b class="gold-text">'+money(c.valor)+'</b><small>'+esc(c.valorDetalle || 'total')+'</small></div>'] : []);
+    return '<article class="card-p">'
+      + '<h3>'+esc(c.titulo)+'</h3>'
+      + (c.detalle ? '<p>'+esc(c.detalle)+'</p>' : '')
+      + (chips.length ? '<div class="chips">'+chips.join('')+'</div>' : '')
+      + (precios.length ? '<div class="precios">'+precios.join('')+'</div>' : '')
+      + (cupo ? '<div class="cupo"><span>'+(lleno ? 'Cupo completo' : (quedan === 1 ? 'Queda 1 lugar' : 'Quedan '+quedan+' lugares'))+' · '+ins+' de '+cupo+' inscriptos</span><div class="bar"><i style="width:'+Math.min(100, ins/cupo*100)+'%"></i></div></div>' : '')
+      + '<div class="row"><button type="button" class="btn" data-inscribir="'+esc(c.id)+'"'+(lleno?' disabled':'')+'>'+(lleno?'Sin lugares':'Inscribirme')+'</button>'
+      + (S.admin ? '<button type="button" class="btn ghost sm" data-editar="'+esc(c.id)+'">Editar</button>' : '') + '</div>'
+      + '</article>';
+  }).join('');
+}
+
+/* ---------- render: panel ---------- */
+function renderPanel(){
+  if (!S.admin) return;
+  $('#p-aviso').innerHTML = (!S.negGuardado ? '<div class="warn">Todavía no guardaste tus ajustes: horarios, servicios y precios son de ejemplo. Revisalos en <b>Ajustes</b> antes de compartir la app.</div>' : '')
+    + (store && !store.demo && !S.promos.length && !S.cursos.length ? '<div class="card" style="margin-top:12px"><h3 class="label">Promos y cursos vacíos</h3><p class="small muted" style="margin:0">Podés cargar unos de ejemplo para no arrancar de cero y después editarlos o borrarlos.</p><button type="button" class="btn ghost sm" id="p-ejemplos" style="width:fit-content">Cargar ejemplos</button></div>' : '');
+  renderPEstado(); renderPAgenda(); renderPInsc();
+}
+function renderPEstado(){
+  const box = $('#p-estado'); if (!box || !S.admin) return;
+  const m = S.estado.modo || 'auto', on = estadoVigente();
+  const loc = S.neg.local, radio = +S.neg.radio || 60, g = Geo.last;
+  let geoInfo = '';
+  if (loc) {
+    const dist = g ? Math.round(distM(loc, g)) : null;
+    geoInfo = '<dl class="geo"><dt>Local</dt><dd>'+loc.lat.toFixed(5)+', '+loc.lng.toFixed(5)+' · radio '+radio+' m</dd>'
+      + '<dt>Vos</dt><dd>'+(g ? 'a '+dist+' m del local (±'+Math.round(g.acc)+' m)' : (Geo.err ? esc(Geo.err) : 'buscando ubicación…'))+'</dd></dl>';
+  }
+  box.innerHTML =
+    '<h3 class="label">Abierto / cerrado <small style="color:'+(on?'var(--ok)':'var(--stop)')+'">'+(on?'● Abierto':'● Cerrado')+'</small></h3>'
+    + '<div class="seg full" role="group" aria-label="Modo">'
+    + ['auto','abierto','cerrado'].map(k => '<button type="button" data-modo="'+k+'" aria-pressed="'+(m===k)+'">'+({auto:'Automático',abierto:'Abierto',cerrado:'Cerrado'})[k]+'</button>').join('') + '</div>'
+    + '<p class="small muted" style="margin:0">'+({
+        auto: 'Se abre solo cuando llegás al local en tu horario. Abrí esta app al llegar. Al terminar tu horario se cierra solo, aunque no la abras.',
+        abierto: 'Abierto a mano hasta que lo cambies. A la medianoche vuelve a cerrado.',
+        cerrado: 'Cerrado a mano aunque estés en el local. Para días libres o vacaciones.'
+      })[m]+'</p>'
+    + (loc ? geoInfo : '<div class="warn">Todavía no marcaste dónde queda el local. Parate adentro del local y tocá el botón.</div>')
+    + '<div class="row"><button type="button" class="btn '+(loc?'ghost':'')+' sm" id="marcar">'+(loc?'Volver a marcar el local acá':'Marcar el local donde estoy')+'</button></div>'
+    + (store && store.demo ? '<div class="row"><span class="small muted">Probar sin moverse:</span><button type="button" class="btn ghost sm" data-sim="in">Llegué</button><button type="button" class="btn ghost sm" data-sim="out">Me fui</button></div>' : '');
+}
+function renderPAgenda(){
+  if (!S.admin) return;
+  const dias = diasLista();
+  if (!S.pDia || !dias.includes(S.pDia)) S.pDia = dias[0];
+  const strip = $('#p-days'); const sl = strip.scrollLeft; strip.innerHTML = dayButtons(S.pDia, null); strip.scrollLeft = sl;
+  const owner = {};
+  S.pTurnos.forEach(t => { const ss = (t.slots && t.slots.length) ? t.slots : [t.id]; ss.forEach((sid, j) => owner[sid] = {t, first: j === 0, last: j === ss.length-1, ss}); });
+  const ids = Array.from(new Set(slotsDelDia(S.pDia).map(h => S.pDia+'_'+h.replace(':','')).concat(Object.keys(owner), Object.keys(S.ocupados).filter(id => id.startsWith(S.pDia+'_'))))).sort();
+  let nT = 0, nL = 0, total = 0;
+  const rows = ids.map(id => {
+    const h = idHora(id), o = owner[id], oc = S.ocupados[id];
+    if (o) {
+      const t = o.t;
+      if (!o.first) return '<div class="li cont"><span class="t">'+h+'</span><span class="who">↳ sigue '+esc(t.nombre)+'</span><span></span></div>';
+      nT++; total += +t.precio || 0;
+      const fin = fromMin(toMin(idHora(o.ss[o.ss.length-1])) + step());
+      const wa = waLink(t.tel, 'Hola '+String(t.nombre).split(' ')[0]+'! Te escribo de The Big Barber por tu turno del '+fechaLarga(t.fecha)+' a las '+t.hora+'.');
+      return '<div class="li"><span class="t">'+h+'</span><span class="who"><b>'+esc(t.nombre)+'</b><span>'+esc(t.servicio||'')+(o.ss.length>1?' · hasta '+fin:'')+(t.precio?' · '+money(t.precio):'')+(t.tel?' · '+esc(t.tel):'')+'</span></span><span class="acts">'
+        + (wa?'<a class="btn wa sm" href="'+wa+'" target="_blank" rel="noopener">WhatsApp</a>':'')
+        + '<button type="button" class="btn danger sm" data-liberar="'+id+'" data-slots="'+esc(o.ss.join(','))+'">Cancelar</button></span></div>';
+    }
+    if (oc && oc.bloqueado) return '<div class="li free"><span class="t">'+h+'</span><span class="who">Bloqueado</span><span class="acts"><button type="button" class="btn ghost sm" data-liberar="'+id+'" data-slots="'+id+'">Desbloquear</button></span></div>';
+    if (oc) { nT++; return '<div class="li"><span class="t">'+h+'</span><span class="who"><b>Reservado</b><span>cargando datos…</span></span><span class="acts"><button type="button" class="btn danger sm" data-liberar="'+(oc.turno||id)+'" data-slots="'+id+'">Liberar</button></span></div>'; }
+    nL++; return '<div class="li free"><span class="t">'+h+'</span><span class="who">Libre</span><span class="acts"><button type="button" class="btn ghost sm" data-bloquear="'+id+'">Bloquear</button></span></div>';
+  });
+  $('#p-agenda').innerHTML = rows.length ? rows.join('') : '<div class="empty">No atendés este día.</div>';
+  $('#p-agenda-stat').textContent = fechaCorta(S.pDia) + ' · ' + nT + ' turno' + (nT===1?'':'s') + ' · ' + nL + ' libre' + (nL===1?'':'s') + (total ? ' · ' + money(total) : '');
+}
+function renderPInsc(){
+  if (!S.admin) return;
+  const box = $('#p-insc');
+  if (!S.insc.length) { box.innerHTML = '<div class="empty">Todavía no hay inscripciones.</div>'; return; }
+  const grupos = {};
+  S.insc.slice().sort((a,b) => (b.creado||0)-(a.creado||0)).forEach(i => { (grupos[i.curso||'Curso'] = grupos[i.curso||'Curso'] || []).push(i); });
+  box.innerHTML = Object.entries(grupos).map(([curso, xs]) => '<div style="padding-top:8px"><span class="grp">'+esc(curso)+' · '+xs.length+'</span>'
+    + xs.map(i => { const wa = waLink(i.tel, 'Hola '+String(i.nombre).split(' ')[0]+'! Te escribo de The Big Barber por tu inscripción al curso '+(i.curso||'')+'.');
+      const d = i.creado ? new Date(i.creado) : null;
+      return '<div class="li2"><span style="min-width:0"><b>'+esc(i.nombre)+'</b><br><span class="small muted">'+esc(i.tel||'')+(d?' · '+d.getDate()+' '+MESES_C[d.getMonth()]:'')+'</span></span><span class="row" style="justify-content:flex-end">'
+        + (wa?'<a class="btn wa sm" href="'+wa+'" target="_blank" rel="noopener">WhatsApp</a>':'')
+        + '<button type="button" class="btn danger sm" data-borrar-insc="'+esc(i.id)+'" data-curso="'+esc(i.cursoId||'')+'">Borrar</button></span></div>'; }).join('') + '</div>').join('');
+}
+
+/* ---------- ubicación (abierto/cerrado automático) ---------- */
+const Geo = {
+  watch: null, last: null, err: null, inN: 0, outN: 0,
+  start(){
+    if (this.watch != null) return;
+    if (!('geolocation' in navigator)) { this.err = 'Este navegador no da la ubicación.'; return; }
+    try { this.watch = navigator.geolocation.watchPosition(p => this.onPos(p), e => this.onErr(e), {enableHighAccuracy:true, maximumAge:10000, timeout:30000}); }
+    catch(e){ this.onErr(e); }
+  },
+  stop(){ if (this.watch != null) { try { navigator.geolocation.clearWatch(this.watch); } catch(e){} } this.watch = null; },
+  onErr(e){
+    this.err = (e && e.code === 1) ? 'Sin permiso de ubicación. Activalo para esta página en el navegador.' : 'No se pudo leer la ubicación acá. En la app instalada desde el link sí funciona.';
+    this.stop(); renderPEstado();
+  },
+  onPos(p){ this.err = null; this.last = {lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy||999, t:Date.now()}; evaluarGeo(); renderPEstado(); }
+};
+function evaluarGeo(){
+  const loc = S.neg.local, g = Geo.last;
+  if (!S.admin || !loc || !g || (S.estado.modo || 'auto') !== 'auto') return;
+  if (g.acc > 150) return;
+  const radio = +S.neg.radio || 60, holgura = Math.min(g.acc, 40);
+  const d = distM(loc, g);
+  const dentro = d - holgura <= radio, fuera = d - holgura > radio + 25;
+  if (dentro) { Geo.inN++; Geo.outN = 0; } else if (fuera) { Geo.outN++; Geo.inN = 0; }
+  const vig = estadoVigente();
+  if (dentro && Geo.inN >= 2 && !vig && enHorario()) store.setEstado({abierto:true, modo:'auto', actualizado:Date.now(), por:'ubicacion'});
+  if (fuera && Geo.outN >= 2 && S.estado.abierto) store.setEstado({abierto:false, modo:'auto', actualizado:Date.now(), por:'ubicacion'});
+}
+function syncGeo(){ (S.admin && S.neg.local && (S.estado.modo||'auto') === 'auto') ? Geo.start() : Geo.stop(); }
+function marcarLocal(){
+  const usar = g => {
+    if (g.acc > 60) toast('Ojo: precisión ±'+Math.round(g.acc)+' m. Si podés, marcalo de nuevo cerca de la puerta.');
+    store.saveNegocio({local:{lat:+g.lat.toFixed(6), lng:+g.lng.toFixed(6)}, radio: +S.neg.radio || 60}).then(() => toast('Local marcado. Queda en automático.'));
+  };
+  if (Geo.last && Date.now() - Geo.last.t < 20000 && Geo.last.acc < 60) return usar(Geo.last);
+  if (!('geolocation' in navigator)) return toast('Este navegador no da la ubicación.');
+  toast('Buscando tu ubicación…');
+  try {
+    navigator.geolocation.getCurrentPosition(p => usar({lat:p.coords.latitude, lng:p.coords.longitude, acc:p.coords.accuracy||999}),
+      e => toast(e && e.code === 1 ? 'Sin permiso de ubicación. Activalo en el navegador y probá de nuevo.' : 'No se pudo leer la ubicación acá. Probalo desde la app instalada.'),
+      {enableHighAccuracy:true, timeout:20000, maximumAge:0});
+  } catch(e){ toast('No se pudo leer la ubicación acá. Probalo desde la app instalada.'); }
+}
+
+/* ---------- hoja inferior ---------- */
+let sheetClose = null;
+function openSheet(html, onClose){
+  $('#sheet-in').innerHTML = html; $('#sheet').hidden = false; sheetClose = onClose || null;
+  const f = $('#sheet-in input:not([type=checkbox]), #sheet-in select, #sheet-in textarea'); if (f && matchMedia('(pointer:fine)').matches) f.focus();
+}
+function closeSheet(){ $('#sheet').hidden = true; $('#sheet-in').innerHTML = ''; if (sheetClose) { const f = sheetClose; sheetClose = null; f(); } }
+const head = (t, sub) => '<div class="sheet-head"><div><h3>'+t+'</h3>'+(sub?'<span class="muted small">'+sub+'</span>':'')+'</div><button type="button" class="x" data-close aria-label="Cerrar">×</button></div>';
+let toastT = null;
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3200); }
+const confirmarDoble = (b, txt) => { if (b.dataset.ok) return true; b.dataset.ok = '1'; const prev = b.textContent; b.textContent = txt || '¿Seguro?'; setTimeout(() => { if (b.isConnected) { delete b.dataset.ok; b.textContent = prev; } }, 4000); return false; };
+
+function abrirReserva(hora){
+  const item = itemSel(); if (!item) return;
+  const st = startsDelDia(S.dia, item.dur).find(s => s.h === hora);
+  if (!st || !st.ok) return toast('Ese horario ya no está disponible.');
+  const fin = fromMin(toMin(hora) + item.dur);
+  const prev = ls.get('tbb-cliente', {});
+  openSheet(head('Confirmá tu turno')
+    + '<dl class="resumen"><dt>Día</dt><dd>'+esc(fechaLarga(S.dia))+'</dd><dt>Hora</dt><dd>'+hora+' a '+fin+' hs</dd><dt>'+(item.promo?'Promo':'Servicio')+'</dt><dd>'+esc(item.nombre)+(item.precio?' · '+money(item.precio):'')+'</dd></dl>'
+    + '<form id="f-reserva" class="sec" style="margin:0" novalidate>'
+    + '<div class="f"><label for="r-nombre">Nombre y apellido</label><input id="r-nombre" autocomplete="name" maxlength="60" value="'+esc(prev.nombre||'')+'"></div>'
+    + '<div class="f"><label for="r-tel">Tu WhatsApp</label><input id="r-tel" type="tel" inputmode="tel" autocomplete="tel" maxlength="25" placeholder="260 4123456" value="'+esc(prev.tel||'')+'"></div>'
+    + '<p class="err" id="r-err"></p><button class="btn block" type="submit" id="r-ok">Reservar '+hora+'</button></form>');
+  $('#f-reserva').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const nombre = $('#r-nombre').value.trim(), tel = $('#r-tel').value.trim();
+    if (nombre.length < 2) return $('#r-err').textContent = 'Escribí tu nombre.';
+    if (digits(tel).length < 8) return $('#r-err').textContent = 'Revisá el número: tiene que tener al menos 8 dígitos.';
+    const b = $('#r-ok'); b.disabled = true; b.textContent = 'Reservando…';
+    const t = {fecha:S.dia, hora, nombre, tel, servicio:(item.promo?'Promo: ':'')+item.nombre, precio:item.precio, dur:item.dur, cat:item.cat||'', slots:st.slots};
+    if (item.promo) t.promoId = item.promo.id;
+    try {
+      const id = await store.reservar(t);
+      ls.set('tbb-cliente', {nombre, tel});
+      const mios = ls.get('tbb-mis-turnos', []); mios.push({id, fecha:t.fecha, hora, servicio:t.servicio, nombre}); ls.set('tbb-mis-turnos', mios);
+      const wa = waLink(S.neg.whatsapp, 'Hola Ema! Saqué turno en The Big Barber para el '+fechaLarga(t.fecha)+' a las '+hora+' ('+t.servicio+'). Soy '+nombre+'.');
+      $('#sheet-in').innerHTML = head('¡Listo!')
+        + '<span class="ok-big gold-text">'+esc(fechaCorta(t.fecha))+' · '+hora+'</span>'
+        + '<p style="margin:0">Tu turno quedó reservado: <b>'+esc(t.servicio)+'</b>. Si no podés venir, avisale a Ema así libera el horario.</p>'
+        + (wa ? '<a class="btn wa block" href="'+wa+'" target="_blank" rel="noopener">Avisarle a Ema por WhatsApp</a>' : '')
+        + '<button type="button" class="btn ghost block" data-close>Volver</button>';
+      if (item.promo) S.sel = null;
+      renderTurnos();
+    } catch(e){
+      if (e.code === 'ocupado') { $('#r-err').textContent = 'Ese horario se acaba de ocupar. Cerrá y elegí otro.'; b.textContent = 'Horario ocupado'; }
+      else { $('#r-err').textContent = 'No se pudo reservar. Revisá la conexión y probá de nuevo.'; b.disabled = false; b.textContent = 'Reservar '+hora; }
+    }
+  });
+}
+
+function abrirInscripcion(id){
+  const c = S.cursos.find(x => x.id === id); if (!c) return;
+  const prev = ls.get('tbb-cliente', {});
+  const precio = [+c.inscripcion>0 ? 'Inscripción '+money(c.inscripcion) : '', +c.valor>0 ? money(c.valor)+' '+(c.valorDetalle||'total') : ''].filter(Boolean).join(' · ');
+  openSheet(head('Inscribirme', esc(c.titulo))
+    + (precio ? '<dl class="resumen"><dt>Valor</dt><dd>'+esc(precio)+'</dd>'+(c.inicio?'<dt>Empieza</dt><dd>'+esc(c.inicio)+'</dd>':'')+'</dl>' : '')
+    + '<form id="f-insc" class="sec" style="margin:0" novalidate>'
+    + '<div class="f"><label for="i-nombre">Nombre y apellido</label><input id="i-nombre" autocomplete="name" maxlength="60" value="'+esc(prev.nombre||'')+'"></div>'
+    + '<div class="f"><label for="i-tel">Tu WhatsApp</label><input id="i-tel" type="tel" inputmode="tel" autocomplete="tel" maxlength="25" placeholder="260 4123456" value="'+esc(prev.tel||'')+'"></div>'
+    + '<p class="small muted" style="margin:0">Ema te escribe para confirmar tu lugar y coordinar el pago.</p>'
+    + '<p class="err" id="i-err"></p><button class="btn block" type="submit" id="i-ok">Reservar mi lugar</button></form>');
+  $('#f-insc').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const nombre = $('#i-nombre').value.trim(), tel = $('#i-tel').value.trim();
+    if (nombre.length < 2) return $('#i-err').textContent = 'Escribí tu nombre.';
+    if (digits(tel).length < 8) return $('#i-err').textContent = 'Revisá el número: tiene que tener al menos 8 dígitos.';
+    const b = $('#i-ok'); b.disabled = true; b.textContent = 'Enviando…';
+    try {
+      await store.inscribir(c, {nombre, tel});
+      ls.set('tbb-cliente', {nombre, tel});
+      const wa = waLink(S.neg.whatsapp, 'Hola Ema! Me inscribí al curso "'+c.titulo+'" desde la app. Soy '+nombre+'.');
+      $('#sheet-in').innerHTML = head('¡Anotado!')
+        + '<p style="margin:0">Tu lugar en <b>'+esc(c.titulo)+'</b> quedó reservado. Ema te va a escribir para confirmar y coordinar el pago.</p>'
+        + (wa ? '<a class="btn wa block" href="'+wa+'" target="_blank" rel="noopener">Escribirle a Ema ahora</a>' : '')
+        + '<button type="button" class="btn ghost block" data-close>Volver</button>';
+    } catch(e){
+      $('#i-err').textContent = e.code === 'lleno' ? 'Se llenó el cupo de este curso. Escribile a Ema por si se libera un lugar.' : 'No se pudo enviar. Revisá la conexión y probá de nuevo.';
+      b.disabled = e.code === 'lleno'; b.textContent = e.code === 'lleno' ? 'Cupo completo' : 'Reservar mi lugar';
+    }
+  });
+}
+
+function abrirLogin(){
+  const demo = store.demo;
+  openSheet(head('Acceso Ema', demo ? 'Modo demo · PIN: '+esc(CONFIG.demoPin) : 'Entrá con tu mail y contraseña')
+    + '<form id="f-login" class="sec" style="margin:0" novalidate>'
+    + (demo ? '' : '<div class="f"><label for="l-mail">Mail</label><input id="l-mail" type="email" autocomplete="username" value="'+esc(CONFIG.adminEmail||'')+'"></div>')
+    + '<div class="f"><label for="l-pass">'+(demo?'PIN':'Contraseña')+'</label><input id="l-pass" type="password" '+(demo?'inputmode="numeric" ':'')+'autocomplete="current-password"></div>'
+    + '<p class="err" id="l-err"></p><button class="btn block" type="submit" id="l-ok">Entrar</button></form>');
+  $('#f-login').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const b = $('#l-ok'); b.disabled = true;
+    try { await store.login(demo ? '' : $('#l-mail').value, $('#l-pass').value); closeSheet(); setTab('panel'); toast('Hola Ema'); }
+    catch(e){ $('#l-err').textContent = e.message || 'No se pudo entrar.'; b.disabled = false; }
+  });
+}
+
+function abrirAjustes(){
+  const n = S.neg;
+  const orden = [1,2,3,4,5,6,0];
+  const svcRow = s => '<div class="svc-ed"><input class="full" aria-label="Servicio" placeholder="Nombre del servicio" value="'+esc(s.n)+'" data-sn><button type="button" class="x" data-quitar-svc aria-label="Quitar servicio">×</button>'
+    + '<select aria-label="Categoría" data-sc><option value="hombre"'+(catOf(s)==='hombre'?' selected':'')+'>Hombre</option><option value="mujer"'+(catOf(s)==='mujer'?' selected':'')+'>Mujer</option></select>'
+    + '<input aria-label="Precio" type="number" inputmode="numeric" min="0" step="500" placeholder="$ precio" value="'+esc(s.p)+'" data-sp>'
+    + '<input aria-label="Minutos" type="number" inputmode="numeric" min="10" step="5" placeholder="min" value="'+esc(s.d||'')+'" data-sd></div>';
+  openSheet(head('Ajustes')
+    + '<form id="f-aj" class="sec" style="margin:0" novalidate>'
+    + '<div class="f"><label for="a-wa">WhatsApp de Ema</label><input id="a-wa" type="tel" inputmode="tel" placeholder="5492604123456" value="'+esc(n.whatsapp||'')+'"><span class="hint">549 + característica sin 0 + número sin 15. Ej: 5492604123456.</span></div>'
+    + '<div class="f"><label for="a-dir">Dirección del local</label><input id="a-dir" maxlength="80" placeholder="Calle 123, San Rafael" value="'+esc(n.direccion||'')+'"></div>'
+    + '<div class="grid2"><div class="f"><label for="a-dur">Intervalo agenda</label><select id="a-dur">'+[15,20,30,40,45,60].map(m => '<option value="'+m+'"'+(+n.duracion===m?' selected':'')+'>Cada '+m+' min</option>').join('')+'</select></div>'
+    + '<div class="f"><label for="a-dias">Turnos con</label><select id="a-dias">'+[7,14,21,30].map(m => '<option value="'+m+'"'+(+n.diasAdelante===m?' selected':'')+'>'+m+' días</option>').join('')+'</select></div></div>'
+    + '<div class="f"><label for="a-radio">Radio del local (m)</label><input id="a-radio" type="number" inputmode="numeric" min="20" max="500" value="'+esc(n.radio||60)+'"><span class="hint">Metros alrededor del punto marcado que cuentan como “en el local”. 50 a 80 anda bien.</span></div>'
+    + '<div class="f"><span class="lab">Horarios</span><span class="hint">Ej: 10:00-13:00, 16:00-21:00. Vacío = no atiende.</span></div>'
+    + orden.map(w => '<div class="hor"><label for="a-h'+w+'">'+DIAS[w]+'</label><input id="a-h'+w+'" placeholder="Cerrado" value="'+esc(n.horarios[w]||'')+'"></div>').join('')
+    + '<div class="f"><span class="lab">Servicios</span><span class="hint">Categoría, precio y cuánto dura. Un servicio largo ocupa varios turnos seguidos en la agenda.</span></div>'
+    + '<div id="a-svcs" class="sec" style="margin:0;gap:8px">'+(n.servicios||[]).map(svcRow).join('')+'</div>'
+    + '<button type="button" class="btn ghost sm" id="a-add-svc" style="width:fit-content">+ Agregar servicio</button>'
+    + '<p class="err" id="a-err"></p><button class="btn block" type="submit">Guardar ajustes</button></form>');
+  $('#a-add-svc').addEventListener('click', () => { $('#a-svcs').insertAdjacentHTML('beforeend', svcRow({n:'', p:'', d:'', c:S.cat})); });
+  $('#a-svcs').addEventListener('click', e => { if (e.target.closest('[data-quitar-svc]')) e.target.closest('.svc-ed').remove(); });
+  $('#f-aj').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const horarios = [0,1,2,3,4,5,6].map(w => $('#a-h'+w).value.trim());
+    const malos = [0,1,2,3,4,5,6].filter(w => horarios[w] && !parseRangos(horarios[w]).length);
+    if (malos.length) return $('#a-err').textContent = 'No entiendo el horario del '+DIAS[malos[0]].toLowerCase()+'. Escribilo así: 10:00-13:00, 16:00-21:00';
+    const dur = +$('#a-dur').value;
+    const servicios = $$('#a-svcs .svc-ed').map(r => ({n:$('[data-sn]', r).value.trim(), c:$('[data-sc]', r).value, p:Math.max(0, +$('[data-sp]', r).value || 0), d:Math.max(10, +$('[data-sd]', r).value || dur)})).filter(s => s.n);
+    try {
+      await store.saveNegocio({whatsapp:digits($('#a-wa').value), direccion:$('#a-dir').value.trim(), duracion:dur, diasAdelante:+$('#a-dias').value, radio:Math.min(500, Math.max(20, +$('#a-radio').value || 60)), horarios, servicios});
+      closeSheet(); toast('Ajustes guardados');
+    } catch(e){ $('#a-err').textContent = 'No se pudo guardar. Revisá la conexión.'; }
+  });
+}
+
+function abrirPromo(id){
+  const p = id ? S.promos.find(x => x.id === id) : {titulo:'', detalle:'', precio:'', antes:'', cat:'todos', dias:[], hasta:'', turno:true, dur:step(), activo:true};
+  if (!p) return;
+  openSheet(head(id ? 'Editar promo' : 'Nueva promo')
+    + '<form id="f-promo" class="sec" style="margin:0" novalidate>'
+    + '<div class="f"><label for="pr-tit">Título</label><input id="pr-tit" maxlength="70" placeholder="Corte + barba martes y miércoles" value="'+esc(p.titulo)+'"></div>'
+    + '<div class="f"><label for="pr-det">Detalle</label><textarea id="pr-det" maxlength="300" placeholder="Qué incluye, condiciones">'+esc(p.detalle)+'</textarea></div>'
+    + '<div class="grid2"><div class="f"><label for="pr-pre">Precio promo ($)</label><input id="pr-pre" type="number" inputmode="numeric" min="0" step="500" value="'+esc(p.precio)+'"></div>'
+    + '<div class="f"><label for="pr-ant">Precio normal ($)</label><input id="pr-ant" type="number" inputmode="numeric" min="0" step="500" value="'+esc(p.antes)+'"><span class="hint">Se muestra tachado</span></div></div>'
+    + '<div class="grid2"><div class="f"><label for="pr-cat">Para</label><select id="pr-cat">'+[['todos','Todos'],['hombre','Hombre'],['mujer','Mujer']].map(([k,l]) => '<option value="'+k+'"'+((p.cat||'todos')===k?' selected':'')+'>'+l+'</option>').join('')+'</select></div>'
+    + '<div class="f"><label for="pr-hasta">Válida hasta</label><input id="pr-hasta" type="date" value="'+esc(p.hasta||'')+'"><span class="hint">Vacío = sin vencimiento</span></div></div>'
+    + '<div class="f"><span class="lab">Días que vale</span><div class="dias-ck">'+[1,2,3,4,5,6,0].map(w => '<label><input type="checkbox" value="'+w+'"'+((p.dias||[]).includes(w)?' checked':'')+'><span>'+DIAS_C[w]+'</span></label>').join('')+'</div><span class="hint">Ninguno marcado = todos los días</span></div>'
+    + '<label class="check"><input type="checkbox" id="pr-turno"'+(p.turno?' checked':'')+'> Se puede sacar turno con esta promo</label>'
+    + '<div class="f" id="pr-dur-w"'+(p.turno?'':' hidden')+'><label for="pr-dur">Duración del turno (min)</label><input id="pr-dur" type="number" inputmode="numeric" min="10" step="5" value="'+esc(p.dur||step())+'"></div>'
+    + '<label class="check"><input type="checkbox" id="pr-act"'+(p.activo!==false?' checked':'')+'> Visible para los clientes</label>'
+    + '<p class="err" id="pr-err"></p><button class="btn block" type="submit">Guardar promo</button>'
+    + (id ? '<button type="button" class="btn danger block" id="pr-del">Borrar promo</button>' : '')
+    + '</form>');
+  $('#pr-turno').addEventListener('change', e => { $('#pr-dur-w').hidden = !e.target.checked; });
+  if (id) $('#pr-del').addEventListener('click', async e => { if (!confirmarDoble(e.currentTarget, '¿Seguro? Tocá de nuevo para borrar')) return; await store.deletePromo(id); closeSheet(); toast('Promo borrada'); });
+  $('#f-promo').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const titulo = $('#pr-tit').value.trim();
+    if (!titulo) return $('#pr-err').textContent = 'Ponele un título a la promo.';
+    const d = {titulo, detalle:$('#pr-det').value.trim(), precio:Math.max(0, +$('#pr-pre').value||0), antes:Math.max(0, +$('#pr-ant').value||0),
+      cat:$('#pr-cat').value, hasta:$('#pr-hasta').value || '', dias:$$('.dias-ck input:checked').map(x => +x.value).sort(),
+      turno:$('#pr-turno').checked, dur:Math.max(10, +$('#pr-dur').value||step()), activo:$('#pr-act').checked};
+    if (d.dias.length === 7) d.dias = [];
+    if (id) d.id = id;
+    try { await store.savePromo(d); closeSheet(); toast('Promo guardada'); }
+    catch(e){ $('#pr-err').textContent = 'No se pudo guardar. Revisá la conexión.'; }
+  });
+}
+
+function abrirCurso(id){
+  const c = id ? S.cursos.find(x => x.id === id) : {titulo:'', detalle:'', cat:'todos', inicio:'', duracion:'', modalidad:'Presencial en el local', inscripcion:0, valor:0, valorDetalle:'total', cupo:8, inscriptos:0, activo:true};
+  if (!c) return;
+  openSheet(head(id ? 'Editar curso' : 'Nuevo curso')
+    + '<form id="f-curso" class="sec" style="margin:0" novalidate>'
+    + '<div class="f"><label for="c-tit">Nombre del curso</label><input id="c-tit" maxlength="70" value="'+esc(c.titulo)+'"></div>'
+    + '<div class="f"><label for="c-det">Qué se aprende</label><textarea id="c-det" maxlength="400">'+esc(c.detalle)+'</textarea></div>'
+    + '<div class="f"><label for="c-cat">Tipo</label><select id="c-cat">'+[['todos','General'],['hombre','Barbería'],['mujer','Peluquería mujer']].map(([k,l]) => '<option value="'+k+'"'+((c.cat||'todos')===k?' selected':'')+'>'+l+'</option>').join('')+'</select></div>'
+    + '<div class="grid2"><div class="f"><label for="c-ini">Empieza</label><input id="c-ini" maxlength="40" placeholder="Noviembre 2026" value="'+esc(c.inicio)+'"></div>'
+    + '<div class="f"><label for="c-dur">Duración</label><input id="c-dur" maxlength="50" placeholder="3 meses" value="'+esc(c.duracion)+'"></div></div>'
+    + '<div class="f"><label for="c-mod">Modalidad / lugar</label><input id="c-mod" maxlength="50" value="'+esc(c.modalidad)+'"></div>'
+    + '<div class="grid2"><div class="f"><label for="c-ins">Inscripción ($)</label><input id="c-ins" type="number" inputmode="numeric" min="0" step="1000" value="'+esc(c.inscripcion||0)+'"><span class="hint">0 = sin inscripción</span></div>'
+    + '<div class="f"><label for="c-val">Valor ($)</label><input id="c-val" type="number" inputmode="numeric" min="0" step="1000" value="'+esc(c.valor||0)+'"></div></div>'
+    + '<div class="grid2"><div class="f"><label for="c-vd">El valor es</label><select id="c-vd">'+['total','por mes','por clase','por jornada'].map(v => '<option'+(c.valorDetalle===v?' selected':'')+'>'+v+'</option>').join('')+'</select></div>'
+    + '<div class="f"><label for="c-cupo">Cupo</label><input id="c-cupo" type="number" inputmode="numeric" min="0" value="'+esc(c.cupo||0)+'"><span class="hint">0 = sin límite</span></div></div>'
+    + '<div class="f"><label for="c-insc">Inscriptos hasta ahora</label><input id="c-insc" type="number" inputmode="numeric" min="0" value="'+esc(c.inscriptos||0)+'"></div>'
+    + '<label class="check"><input type="checkbox" id="c-act"'+(c.activo!==false?' checked':'')+'> Visible para los clientes</label>'
+    + '<p class="err" id="c-err"></p><button class="btn block" type="submit">Guardar curso</button>'
+    + (id ? '<button type="button" class="btn danger block" id="c-del">Borrar curso</button>' : '')
+    + '</form>');
+  if (id) $('#c-del').addEventListener('click', async e => { if (!confirmarDoble(e.currentTarget, '¿Seguro? Tocá de nuevo para borrar')) return; await store.deleteCurso(id); closeSheet(); toast('Curso borrado'); });
+  $('#f-curso').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const titulo = $('#c-tit').value.trim();
+    if (!titulo) return $('#c-err').textContent = 'Ponele un nombre al curso.';
+    const d = {titulo, detalle:$('#c-det').value.trim(), cat:$('#c-cat').value, inicio:$('#c-ini').value.trim(), duracion:$('#c-dur').value.trim(), modalidad:$('#c-mod').value.trim(),
+      inscripcion:Math.max(0, +$('#c-ins').value||0), valor:Math.max(0, +$('#c-val').value||0), valorDetalle:$('#c-vd').value,
+      cupo:Math.max(0, Math.floor(+$('#c-cupo').value||0)), inscriptos:Math.max(0, Math.floor(+$('#c-insc').value||0)), activo:$('#c-act').checked};
+    if (id) d.id = id;
+    try { await store.saveCurso(d); closeSheet(); toast('Curso guardado'); }
+    catch(e){ $('#c-err').textContent = 'No se pudo guardar. Revisá la conexión.'; }
+  });
+}
+
+/* ---------- pestañas ---------- */
+function setTab(t){
+  if (t === 'panel' && !S.admin) t = 'turnos';
+  S.tab = t;
+  ['turnos','promos','cursos','panel'].forEach(k => { $('#tab-'+k).hidden = k !== t; });
+  $$('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
+  if (t === 'panel') renderPanel();
+  try { history.replaceState(null, '', t === 'turnos' ? location.pathname + location.search : '#'+t); } catch(e){}
+  window.scrollTo({top:0});
+}
+
+/* ---------- eventos ---------- */
+document.addEventListener('click', async e => {
+  if (e.target === $('#sheet')) return closeSheet();
+  const el = e.target.closest('button, a'); if (!el) return;
+  const d = el.dataset;
+  if (d.close !== undefined) return closeSheet();
+  if (d.tab) return setTab(d.tab);
+  if (d.dia) {
+    if (el.closest('#p-days')) { S.pDia = d.dia; subPTurnos(); renderPAgenda(); }
+    else { S.dia = d.dia; renderTurnos(); }
+    return;
+  }
+  if (d.cat) { S.cat = d.cat; S.sel = null; ls.set('tbb-cat', S.cat); return renderTurnos(); }
+  if (d.svc) { S.sel = {svc:+d.svc}; return renderTurnos(); }
+  if (d.quitarPromo !== undefined) { S.sel = null; return renderTurnos(); }
+  if (d.usarPromo) {
+    const p = S.promos.find(x => x.id === d.usarPromo); if (!p) return;
+    S.sel = {promo:p.id};
+    if (p.cat === 'hombre' || p.cat === 'mujer') S.cat = p.cat;
+    if (S.dia && !promoAplicaDia(p, S.dia)) S.dia = null;
+    setTab('turnos'); renderTurnos(); return;
+  }
+  if (d.hora && el.classList.contains('slot')) return abrirReserva(d.hora);
+  if (d.olvidar) { ls.set('tbb-mis-turnos', ls.get('tbb-mis-turnos', []).filter(t => t.id !== d.olvidar)); return renderMio(); }
+  if (d.promoCat) { S.promoCat = d.promoCat; return renderPromos(); }
+  if (d.cursoCat) { S.cursoCat = d.cursoCat; return renderCursos(); }
+  if (d.inscribir) return abrirInscripcion(d.inscribir);
+  if (d.editar) return abrirCurso(d.editar);
+  if (d.editarPromo) return abrirPromo(d.editarPromo);
+  if (d.modo) {
+    const m = d.modo;
+    Geo.inN = Geo.outN = 0;
+    await store.setEstado(m === 'auto' ? {modo:'auto', abierto:false, actualizado:Date.now()} : {modo:m, abierto:m === 'abierto', actualizado:Date.now(), por:'manual'});
+    return;
+  }
+  if (d.sim) { await store.setEstado({modo:'auto', abierto:d.sim === 'in', actualizado:Date.now(), por:'simulado'}); toast(d.sim === 'in' ? 'Simulado: llegaste al local' : 'Simulado: te fuiste del local'); return; }
+  if (d.liberar) { if (!confirmarDoble(el)) return; await store.liberar(d.liberar, (d.slots||'').split(',').filter(Boolean)); toast('Horario liberado'); return; }
+  if (d.bloquear) { await store.bloquear(d.bloquear, d.bloquear.slice(0,10)); toast('Horario bloqueado'); return; }
+  if (d.borrarInsc) { if (!confirmarDoble(el)) return; await store.deleteInscripcion(d.borrarInsc, d.curso); toast('Inscripción borrada'); return; }
+  switch (el.id) {
+    case 'acceso': return S.admin ? setTab('panel') : abrirLogin();
+    case 'p-salir': await store.logout(); setTab('turnos'); toast('Saliste del panel'); return;
+    case 'p-ajustes': return abrirAjustes();
+    case 'add-curso': return abrirCurso(null);
+    case 'add-promo': return abrirPromo(null);
+    case 'marcar': return marcarLocal();
+    case 'p-ejemplos': {
+      el.disabled = true; el.textContent = 'Cargando…';
+      const ej = seedDemo();
+      try {
+        for (const p of Object.values(ej.promos)) { const d = Object.assign({}, p); delete d.creado; await store.savePromo(d); }
+        for (const c of Object.values(ej.cursos)) { const d = Object.assign({}, c, {inscriptos:0}); delete d.creado; await store.saveCurso(d); }
+        toast('Ejemplos cargados. Editalos desde Promos y Cursos.'); renderPanel();
+      } catch(x){ el.disabled = false; el.textContent = 'Cargar ejemplos'; toast('No se pudo cargar. ¿Pegaste las reglas en Firestore?'); }
+      return;
+    }
+  }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#sheet').hidden) closeSheet(); });
+
+/* ---------- suscripciones ---------- */
+function subOcupados(){
+  if (unsubOcup) unsubOcup();
+  const dias = diasLista();
+  unsubOcup = store.subOcupados(dias[0], dias[dias.length-1], o => { S.ocupados = o || {}; renderTurnos(); if (S.tab === 'panel') renderPAgenda(); });
+}
+function subPTurnos(){
+  if (unsubPTurnos) { unsubPTurnos(); unsubPTurnos = null; }
+  if (!S.admin) return;
+  if (!S.pDia) S.pDia = hoyYmd();
+  unsubPTurnos = store.subTurnos(S.pDia, ts => { S.pTurnos = ts || []; if (S.tab === 'panel') renderPAgenda(); });
+}
+function onAdmin(isAdmin){
+  S.admin = isAdmin;
+  $('.tab[data-tab="panel"]').hidden = !isAdmin;
+  $('#acceso').textContent = isAdmin ? 'Panel de Ema' : 'Acceso Ema';
+  unsubAdmin.forEach(f => f && f()); unsubAdmin = [];
+  if (isAdmin) {
+    subPTurnos();
+    unsubAdmin.push(store.subInscripciones(xs => { S.insc = xs || []; if (S.tab === 'panel') renderPInsc(); }));
+  } else { if (unsubPTurnos) { unsubPTurnos(); unsubPTurnos = null; } if (S.tab === 'panel') setTab('turnos'); }
+  syncGeo(); renderCursos(); renderPromos(); if (S.tab === 'panel') renderPanel();
+}
+
+async function start(){
+  try { store = CONFIG.firebase ? await FireStore() : LocalStore(); }
+  catch(e){ console.warn(e); store = LocalStore(); toast('Sin conexión con la base: mostrando datos de prueba.'); }
+  $('#demo').hidden = !store.demo;
+  let diasPrev = '';
+  store.subNegocio(n => {
+    S.negGuardado = !!(n && n.guardado);
+    S.neg = Object.assign(JSON.parse(JSON.stringify(DEFAULT_NEG)), n || {});
+    if (!Array.isArray(S.neg.horarios) || S.neg.horarios.length !== 7) S.neg.horarios = DEFAULT_NEG.horarios.slice();
+    const key = diasLista().join();
+    if (key !== diasPrev) { diasPrev = key; subOcupados(); }
+    renderEstado(); renderTurnos(); syncGeo(); if (S.tab === 'panel') renderPanel();
+  });
+  store.subEstado(e => { S.estado = Object.assign({abierto:false, modo:'auto', actualizado:0}, e || {}); renderEstado(); syncGeo(); });
+  store.subCursos(cs => { S.cursos = cs || []; renderCursos(); });
+  store.subPromos(ps => { S.promos = ps || []; renderPromos(); renderTurnos(); if (S.tab === 'panel') renderPanel(); });
+  store.onAuth(onAdmin);
+  const h = (location.hash || '').slice(1);
+  if (h === 'cursos' || h === 'promos') setTab(h);
+  setInterval(() => { renderEstado(); renderTurnos(); }, 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { renderEstado(); renderTurnos(); if (S.admin && Geo.watch == null) syncGeo(); } });
+}
+
+/* ---------- instalar la app (iPhone y Android) ---------- */
+const Install = (() => {
+  const box = $('#install');
+  const ua = navigator.userAgent || '';
+  const ios = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  const sitioPropio = window.top === window.self && !!document.querySelector('link[rel="manifest"]');
+  let evento = null;
+  const cerrado = () => { try { return Date.now() - (+localStorage.getItem('tbb-install-x') || 0) < 7*864e5; } catch(e){ return false; } };
+  const icono = '<img src="icon-192.png" alt="" width="42" height="42">';
+  const compartir = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-label="Compartir"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>';
+  const cerrar = '<button type="button" class="x" data-install-x aria-label="Cerrar aviso">×</button>';
+  function mostrar(){
+    if (!sitioPropio || standalone || cerrado()) { box.hidden = true; return; }
+    if (ios) {
+      box.innerHTML = '<div class="install">'+icono+'<div><b>Instalá la app en tu iPhone</b><span>Tocá '+compartir+' <b>Compartir</b> abajo en Safari y después <b>Agregar a inicio</b>. Queda como una app más.</span></div>'+cerrar+'</div>';
+      box.hidden = false;
+    } else if (evento) {
+      box.innerHTML = '<div class="install">'+icono+'<div><b>Instalá la app en tu celu</b><span>Queda en la pantalla de inicio y se abre sin el navegador.</span><button type="button" class="btn sm" data-install-go style="width:fit-content">Instalar</button></div>'+cerrar+'</div>';
+      box.hidden = false;
+    } else box.hidden = true;
+  }
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); evento = e; mostrar(); });
+  window.addEventListener('appinstalled', () => { evento = null; box.hidden = true; });
+  box.addEventListener('click', async e => {
+    if (e.target.closest('[data-install-x]')) { try { localStorage.setItem('tbb-install-x', String(Date.now())); } catch(x){} box.hidden = true; }
+    if (e.target.closest('[data-install-go]') && evento) { evento.prompt(); try { await evento.userChoice; } catch(x){} evento = null; mostrar(); }
+  });
+  mostrar();
+  return {ios, standalone};
+})();
+
+renderEstado(); renderTurnos(); renderPromos(); renderCursos();
+start();
+
+if ('serviceWorker' in navigator && location.protocol === 'https:' && window.top === window.self && document.querySelector('link[rel="manifest"]')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+})();
+</script>
+
+</body>
+</html>
