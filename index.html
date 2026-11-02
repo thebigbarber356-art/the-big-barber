@@ -283,6 +283,7 @@ a{color:var(--gold-hi)}
 .nov-li:first-of-type{border-top:0}
 .nov-li .k{font-family:var(--f-label);font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--on-gold);background:var(--gold-grad);padding:3px 8px;border-radius:99px}
 .nov-li .k.i{background:transparent;color:var(--gold-hi);border:1px solid var(--gold-line)}
+.nov-li .k.c{background:transparent;color:var(--stop);border:1px solid rgba(227,100,79,.55)}
 .nov-li .who{min-width:0}
 .nov-li .who b{display:block;font-weight:600}
 .nov-li .who span{font-size:13px;color:var(--mute);overflow-wrap:anywhere}
@@ -444,6 +445,14 @@ const fromMin = m => pad(Math.floor(m/60)) + ':' + pad(m%60);
 const toMin = h => { const [a,b] = h.split(':').map(Number); return a*60 + b; };
 const nowMin = () => { const d = new Date(); return d.getHours()*60 + d.getMinutes(); };
 const nid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+// Id / clave aleatoria e imposible de adivinar (para turnos y su clave de cancelación)
+function idSeguro(n){
+  const abc = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789', out = [];
+  const buf = new Uint8Array(n);
+  try { crypto.getRandomValues(buf); } catch(e){ for (let i=0; i<n; i++) buf[i] = Math.floor(Math.random()*256); }
+  for (let i=0; i<n; i++) out.push(abc[buf[i] % abc.length]);
+  return out.join('');
+}
 const digits = s => String(s||'').replace(/\D/g,'');
 const fechaLarga = f => { const d = parseFecha(f); return DIAS[d.getDay()] + ' ' + d.getDate() + ' de ' + MESES[d.getMonth()]; };
 const fechaCorta = f => { const d = parseFecha(f); return DIAS_C[d.getDay()] + ' ' + d.getDate() + ' ' + MESES_C[d.getMonth()]; };
@@ -496,7 +505,8 @@ const DEFAULT_NEG = {
     {n:'Mechas / balayage', p:45000, d:150, c:'mujer'},
     {n:'Alisado / keratina', p:40000, d:120, c:'mujer'}
   ],
-  local: null, radio: 60
+  local: null, radio: 60,
+  cancelarHasta: 2         // horas antes del turno hasta las que el cliente puede cancelar (-1 = no permitir)
 };
 
 /* ---------- almacenamiento: DEMO (en el celu) ---------- */
@@ -523,10 +533,20 @@ function LocalStore(){
     subOcupados(desde, hasta, cb){ return on(() => { const o = {}; for (const [id,v] of Object.entries(st.ocupados)) if (v.fecha >= desde && v.fecha <= hasta) o[id] = v; cb(o); }); },
     async reservar(t){
       if (t.slots.some(id => st.ocupados[id])) { const e = new Error('ocupado'); e.code = 'ocupado'; throw e; }
-      const id = t.slots[0];
+      const id = idSeguro(20);
       t.slots.forEach(s => st.ocupados[s] = {fecha:t.fecha, turno:id});
       st.turnos[id] = Object.assign({}, t, {creado:Date.now()}); save(); return id;
     },
+    async cancelarMio(m){
+      const t = st.turnos[m.id];
+      if (!t || t.clave !== m.clave) { const e = new Error('no'); e.code = 'no-existe'; throw e; }
+      (t.slots || []).forEach(s => { if (st.ocupados[s] && st.ocupados[s].turno === m.id) delete st.ocupados[s]; });
+      delete st.turnos[m.id];
+      st.cancelaciones = st.cancelaciones || {};
+      st.cancelaciones[m.id] = {clave:m.clave, fecha:t.fecha, hora:t.hora, nombre:t.nombre, servicio:t.servicio||'', creado:Date.now()};
+      save();
+    },
+    subCancelaciones(ts, cb){ return on(() => cb(lista(st.cancelaciones || {}).filter(v => (v.creado||0) > ts))); },
     subTurnos(fecha, cb){ return on(() => cb(lista(st.turnos).filter(v => v.fecha === fecha))); },
     subTurnosDesde(ts, cb){ return on(() => cb(lista(st.turnos).filter(v => (v.creado||0) > ts))); },
     async liberar(id, slots){ const t = st.turnos[id]; (slots || (t && t.slots) || [id]).forEach(s => delete st.ocupados[s]); delete st.ocupados[id]; delete st.turnos[id]; save(); },
@@ -608,12 +628,21 @@ async function FireStore(){
     async setEstado(e){ await db.doc('config/estado').set(e, {merge:true}); },
     subOcupados(desde, hasta, cb){ return db.collection('ocupados').where('fecha','>=',desde).where('fecha','<=',hasta).onSnapshot(s => { const o = {}; s.docs.forEach(d => o[d.id] = d.data()); cb(o); }, quiet); },
     async reservar(t){
-      const id = t.slots[0], b = db.batch();
+      const id = idSeguro(20), b = db.batch();
       t.slots.forEach(s => b.set(db.doc('ocupados/'+s), {fecha:t.fecha, turno:id}));
       b.set(db.doc('turnos/'+id), Object.assign({}, t, {creado:Date.now()}));
       try { await b.commit(); } catch(e){ const x = new Error('ocupado'); x.code = 'ocupado'; throw x; }
       return id;
     },
+    // El cliente cancela su turno: registra la cancelación con su clave y libera los horarios en una sola operación.
+    async cancelarMio(m){
+      const b = db.batch();
+      b.set(db.doc('cancelaciones/'+m.id), {clave:m.clave, fecha:m.fecha, hora:m.hora, nombre:m.nombre, servicio:m.servicio||'', creado:Date.now()});
+      b.delete(db.doc('turnos/'+m.id));
+      (m.slots || []).forEach(s => b.delete(db.doc('ocupados/'+s)));
+      try { await b.commit(); } catch(e){ console.warn(e); const x = new Error('no'); x.code = 'no-existe'; throw x; }
+    },
+    subCancelaciones(ts, cb){ return db.collection('cancelaciones').where('creado','>',ts).onSnapshot(s => cb(list(s)), quiet); },
     subTurnos(fecha, cb){ return db.collection('turnos').where('fecha','==',fecha).onSnapshot(s => cb(list(s)), quiet); },
     subTurnosDesde(ts, cb){ return db.collection('turnos').where('creado','>',ts).onSnapshot(s => cb(list(s)), quiet); },
     async liberar(id, slots){ const b = db.batch(); Array.from(new Set((slots || []).concat(id))).forEach(s => b.delete(db.doc('ocupados/'+s))); b.delete(db.doc('turnos/'+id)); await b.commit(); },
@@ -823,12 +852,53 @@ function renderMio(){
   if (!mios.length) { w.hidden = true; w.innerHTML = ''; return; }
   w.hidden = false;
   w.innerHTML = '<h3 class="label">Tus turnos</h3>' + mios.map(t => {
-    const vivo = !!S.ocupados[t.id];
+    const s0 = (t.slots && t.slots[0]) || t.id;
+    const vivo = !S.ocupCargado || (!!S.ocupados[s0] && (!S.ocupados[s0].turno || S.ocupados[s0].turno === t.id));
     const wa = waLink(S.neg.whatsapp, 'Hola Ema! Te escribo por mi turno del ' + fechaLarga(t.fecha) + ' a las ' + t.hora + '. Soy ' + t.nombre + '.');
+    const pc = vivo ? puedeCancelar(t) : {ok:false};
+    const nota = !vivo ? 'Escribile a Ema o sacá otro turno.' : pc.ok ? 'Si no podés venir, cancelalo así otro aprovecha el horario.' : pc.motivo;
     return '<div class="mio'+(vivo?'':' cancel')+'"><strong>'+esc(fechaLarga(t.fecha))+' · '+t.hora+'</strong><span>'+esc(t.servicio)+(vivo?'':' · <b>Este turno fue cancelado</b>')+'</span>'
-      + '<span class="small muted">'+(vivo?'Para cancelarlo o cambiarlo, avisale a Ema.':'Escribile a Ema o sacá otro turno.')+'</span>'
-      + '<span class="row">'+(wa?'<a class="btn wa sm" href="'+wa+'" target="_blank" rel="noopener">Escribirle a Ema</a>':'')+'<button type="button" class="link" data-olvidar="'+esc(t.id)+'">Quitar de esta lista</button></span></div>';
+      + '<span class="small muted">'+esc(nota)+'</span>'
+      + '<span class="row">'
+      + (pc.ok ? '<button type="button" class="btn danger sm" data-cancelar-mio="'+esc(t.id)+'">Cancelar turno</button>' : '')
+      + (wa?'<a class="btn wa sm" href="'+wa+'" target="_blank" rel="noopener">Escribirle a Ema</a>':'')
+      + (vivo ? '' : '<button type="button" class="link" data-olvidar="'+esc(t.id)+'">Quitar de esta lista</button>')
+      + '</span></div>';
   }).join('');
+}
+// ¿El cliente puede cancelar este turno desde la app? Depende de la clave y del límite que puso Ema.
+function puedeCancelar(t){
+  const h = S.neg.cancelarHasta == null ? 2 : +S.neg.cancelarHasta;
+  if (!t.clave) return {ok:false, motivo:'Para cancelarlo o cambiarlo, avisale a Ema.'};
+  if (h < 0) return {ok:false, motivo:'Para cancelarlo o cambiarlo, avisale a Ema.'};
+  const falta = (parseFecha(t.fecha).getTime() + toMin(t.hora)*60000) - Date.now();
+  if (falta < h * 3600000) return {ok:false, motivo: h ? 'Falta menos de ' + (h === 1 ? '1 hora' : h + ' horas') + ': para cancelarlo, avisale a Ema.' : 'Para cancelarlo, avisale a Ema.'};
+  return {ok:true};
+}
+function abrirCancelarMio(id){
+  const t = ls.get('tbb-mis-turnos', []).find(x => x.id === id); if (!t) return;
+  openSheet(head('Cancelar turno')
+    + '<dl class="resumen"><dt>Día</dt><dd>'+esc(fechaLarga(t.fecha))+'</dd><dt>Hora</dt><dd>'+t.hora+' hs</dd><dt>Servicio</dt><dd>'+esc(t.servicio)+'</dd></dl>'
+    + '<p style="margin:0">El horario queda libre para otra persona. Esto no se puede deshacer.</p>'
+    + '<p class="err" id="cm-err"></p>'
+    + '<button type="button" class="btn danger block" id="cm-ok">Sí, cancelar mi turno</button>'
+    + '<button type="button" class="btn ghost block" data-close>No, mantenerlo</button>');
+  $('#cm-ok').addEventListener('click', async e => {
+    const b = e.currentTarget; b.disabled = true; b.textContent = 'Cancelando…';
+    try {
+      await store.cancelarMio(t);
+      ls.set('tbb-mis-turnos', ls.get('tbb-mis-turnos', []).filter(x => x.id !== id));
+      const wa = waLink(S.neg.whatsapp, 'Hola Ema! Cancelé desde la app mi turno del '+fechaLarga(t.fecha)+' a las '+t.hora+'. Soy '+t.nombre+'. Disculpá!');
+      $('#sheet-in').innerHTML = head('Turno cancelado')
+        + '<p style="margin:0">Listo, el horario quedó libre. Ema ya lo ve en su agenda.</p>'
+        + (wa ? '<a class="btn wa block" href="'+wa+'" target="_blank" rel="noopener">Avisarle a Ema por WhatsApp</a>' : '')
+        + '<button type="button" class="btn ghost block" data-close>Volver</button>';
+      renderTurnos();
+    } catch(x){
+      $('#cm-err').textContent = x.code === 'no-existe' ? 'Este turno ya no está activo (puede que Ema lo haya cancelado). Escribile si tenés dudas.' : 'No se pudo cancelar. Revisá la conexión y probá de nuevo.';
+      b.textContent = 'Sí, cancelar mi turno'; b.disabled = x.code === 'no-existe';
+    }
+  });
 }
 
 /* ---------- render: promos ---------- */
@@ -953,7 +1023,7 @@ function renderPAgenda(){
       const wa = waLink(t.tel, 'Hola '+String(t.nombre).split(' ')[0]+'! Te escribo de The Big Barber por tu turno del '+fechaLarga(t.fecha)+' a las '+t.hora+'.');
       return '<div class="li"><span class="t">'+h+'</span><span class="who"><b>'+esc(t.nombre)+'</b><span>'+esc(t.servicio||'')+(o.ss.length>1?' · hasta '+fin:'')+(t.precio?' · '+money(t.precio):'')+(t.tel?' · '+esc(t.tel):'')+'</span></span><span class="acts">'
         + (wa?'<a class="btn wa sm" href="'+wa+'" target="_blank" rel="noopener">WhatsApp</a>':'')
-        + '<button type="button" class="btn danger sm" data-liberar="'+id+'" data-slots="'+esc(o.ss.join(','))+'">Cancelar</button></span></div>';
+        + '<button type="button" class="btn danger sm" data-liberar="'+esc(t.id)+'" data-slots="'+esc(o.ss.join(','))+'">Cancelar</button></span></div>';
     }
     if (oc && oc.bloqueado) return '<div class="li free"><span class="t">'+h+'</span><span class="who">Bloqueado</span><span class="acts"><button type="button" class="btn ghost sm" data-liberar="'+id+'" data-slots="'+id+'">Desbloquear</button></span></div>';
     if (oc) { nT++; return '<div class="li"><span class="t">'+h+'</span><span class="who"><b>Reservado</b><span>cargando datos…</span></span><span class="acts"><button type="button" class="btn danger sm" data-liberar="'+(oc.turno||id)+'" data-slots="'+id+'">Liberar</button></span></div>'; }
@@ -1050,12 +1120,12 @@ function abrirReserva(hora){
     if (nombre.length < 2) return $('#r-err').textContent = 'Escribí tu nombre.';
     if (digits(tel).length < 8) return $('#r-err').textContent = 'Revisá el número: tiene que tener al menos 8 dígitos.';
     const b = $('#r-ok'); b.disabled = true; b.textContent = 'Reservando…';
-    const t = {fecha:S.dia, hora, nombre, tel, servicio:(item.promo?'Promo: ':'')+item.nombre, precio:item.precio, dur:item.dur, cat:item.cat||'', slots:st.slots};
+    const t = {fecha:S.dia, hora, nombre, tel, servicio:(item.promo?'Promo: ':'')+item.nombre, precio:item.precio, dur:item.dur, cat:item.cat||'', slots:st.slots, clave:idSeguro(24)};
     if (item.promo) t.promoId = item.promo.id;
     try {
       const id = await store.reservar(t);
       ls.set('tbb-cliente', {nombre, tel});
-      const mios = ls.get('tbb-mis-turnos', []); mios.push({id, fecha:t.fecha, hora, servicio:t.servicio, nombre}); ls.set('tbb-mis-turnos', mios);
+      const mios = ls.get('tbb-mis-turnos', []); mios.push({id, fecha:t.fecha, hora, servicio:t.servicio, nombre, slots:t.slots, clave:t.clave}); ls.set('tbb-mis-turnos', mios);
       const wa = waLink(S.neg.whatsapp, 'Hola Ema! Saqué turno en The Big Barber para el '+fechaLarga(t.fecha)+' a las '+hora+' ('+t.servicio+'). Soy '+nombre+'.');
       $('#sheet-in').innerHTML = head('¡Listo!')
         + '<span class="ok-big gold-text">'+esc(fechaCorta(t.fecha))+' · '+hora+'</span>'
@@ -1131,6 +1201,7 @@ function abrirAjustes(){
     + '<div class="f"><label for="a-dir">Dirección del local</label><input id="a-dir" maxlength="80" placeholder="Calle 123, San Rafael" value="'+esc(n.direccion||'')+'"></div>'
     + '<div class="grid2"><div class="f"><label for="a-dur">Intervalo agenda</label><select id="a-dur">'+[15,20,30,40,45,60].map(m => '<option value="'+m+'"'+(+n.duracion===m?' selected':'')+'>Cada '+m+' min</option>').join('')+'</select></div>'
     + '<div class="f"><label for="a-dias">Turnos con</label><select id="a-dias">'+[7,14,21,30].map(m => '<option value="'+m+'"'+(+n.diasAdelante===m?' selected':'')+'>'+m+' días</option>').join('')+'</select></div></div>'
+    + '<div class="f"><label for="a-canc">Los clientes pueden cancelar</label><select id="a-canc">'+[[-1,'No, que me avisen a mí'],[0,'Hasta la hora del turno'],[1,'Hasta 1 hora antes'],[2,'Hasta 2 horas antes'],[3,'Hasta 3 horas antes'],[6,'Hasta 6 horas antes'],[12,'Hasta 12 horas antes'],[24,'Hasta 24 horas antes']].map(([v,l]) => '<option value="'+v+'"'+((n.cancelarHasta == null ? 2 : +n.cancelarHasta) === v ? ' selected' : '')+'>'+l+'</option>').join('')+'</select><span class="hint">Desde “Tus turnos”, en el mismo celu con el que lo sacaron. Te llega el aviso y el horario se libera solo.</span></div>'
     + '<div class="f"><label for="a-radio">Radio del local (m)</label><input id="a-radio" type="number" inputmode="numeric" min="20" max="500" value="'+esc(n.radio||60)+'"><span class="hint">Metros alrededor del punto marcado que cuentan como “en el local”. 50 a 80 anda bien.</span></div>'
     + '<div class="f"><span class="lab">Horarios</span><span class="hint">Ej: 10:00-13:00, 16:00-21:00. Vacío = no atiende.</span></div>'
     + orden.map(w => '<div class="hor"><label for="a-h'+w+'">'+DIAS[w]+'</label><input id="a-h'+w+'" placeholder="Cerrado" value="'+esc(n.horarios[w]||'')+'"></div>').join('')
@@ -1148,7 +1219,7 @@ function abrirAjustes(){
     const dur = +$('#a-dur').value;
     const servicios = $$('#a-svcs .svc-ed').map(r => ({n:$('[data-sn]', r).value.trim(), c:$('[data-sc]', r).value, p:Math.max(0, +$('[data-sp]', r).value || 0), d:Math.max(10, +$('[data-sd]', r).value || dur)})).filter(s => s.n);
     try {
-      await store.saveNegocio({whatsapp:digits($('#a-wa').value), direccion:$('#a-dir').value.trim(), duracion:dur, diasAdelante:+$('#a-dias').value, radio:Math.min(500, Math.max(20, +$('#a-radio').value || 60)), horarios, servicios});
+      await store.saveNegocio({whatsapp:digits($('#a-wa').value), direccion:$('#a-dir').value.trim(), duracion:dur, diasAdelante:+$('#a-dias').value, radio:Math.min(500, Math.max(20, +$('#a-radio').value || 60)), cancelarHasta:+$('#a-canc').value, horarios, servicios});
       closeSheet(); toast('Ajustes guardados');
     } catch(e){ $('#a-err').textContent = 'No se pudo guardar. Revisá la conexión.'; }
   });
@@ -1518,6 +1589,7 @@ document.addEventListener('click', async e => {
     setTab('turnos'); renderTurnos(); return;
   }
   if (d.hora && el.classList.contains('slot')) return abrirReserva(d.hora);
+  if (d.cancelarMio) return abrirCancelarMio(d.cancelarMio);
   if (d.olvidar) { ls.set('tbb-mis-turnos', ls.get('tbb-mis-turnos', []).filter(t => t.id !== d.olvidar)); return renderMio(); }
   if (d.promoCat) { S.promoCat = d.promoCat; return renderPromos(); }
   if (d.cursoCat) { S.cursoCat = d.cursoCat; return renderCursos(); }
@@ -1526,6 +1598,7 @@ document.addEventListener('click', async e => {
     $('#aviso').hidden = true;
     const it = novItems().find(x => x.id === d.avisoVer);
     if (it && it.tipo === 'turno') { S.pDia = it.t.fecha; subPTurnos(); }
+    if (it && it.tipo === 'canc') { S.pDia = it.c.fecha; subPTurnos(); }
     setTab('panel'); return;
   }
   if (d.verDia) { S.pDia = d.verDia; subPTurnos(); renderPAgenda(); const a = $('#p-agenda'); if (a) a.scrollIntoView({behavior:'smooth', block:'start'}); return; }
@@ -1574,7 +1647,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#sheet
 function subOcupados(){
   if (unsubOcup) unsubOcup();
   const dias = diasLista();
-  unsubOcup = store.subOcupados(dias[0], dias[dias.length-1], o => { S.ocupados = o || {}; renderTurnos(); if (S.tab === 'panel') renderPAgenda(); });
+  unsubOcup = store.subOcupados(dias[0], dias[dias.length-1], o => { S.ocupados = o || {}; S.ocupCargado = true; renderTurnos(); if (S.tab === 'panel') renderPAgenda(); });
 }
 function subPTurnos(){
   if (unsubPTurnos) { unsubPTurnos(); unsubPTurnos = null; }
@@ -1583,7 +1656,7 @@ function subPTurnos(){
   unsubPTurnos = store.subTurnos(S.pDia, ts => { S.pTurnos = ts || []; if (S.tab === 'panel') renderPAgenda(); });
 }
 /* ---------- novedades para Ema: turnos e inscripciones nuevas ---------- */
-const Nov = {visto:0, primer:0, vistosIds:new Set(), turnos:[], insc:[], avisados:new Set(), pendientes:0, tResumen:null, tAviso:null, cargoT:false, cargoI:false};
+const Nov = {visto:0, primer:0, vistosIds:new Set(), turnos:[], insc:[], canc:[], avisados:new Set(), pendientes:0, tResumen:null, tAviso:null, cargoT:false, cargoI:false, cargoC:false};
 const ICON_BELL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>';
 let audioCtx = null;
 document.addEventListener('pointerdown', () => { try { if (!audioCtx && (window.AudioContext || window.webkitAudioContext)) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); } catch(e){} }, {passive:true});
@@ -1602,9 +1675,11 @@ function sonar(){
 }
 const novItems = () => Nov.turnos.map(t => ({tipo:'turno', id:'t:'+t.id, creado:t.creado||0, t}))
   .concat(Nov.insc.map(i => ({tipo:'insc', id:'i:'+i.id, creado:i.creado||0, i})))
+  .concat(Nov.canc.map(c => ({tipo:'canc', id:'c:'+c.id, creado:c.creado||0, c})))
   .sort((a,b) => b.creado - a.creado);
 function novTexto(it){
   if (it.tipo === 'turno') { const t = it.t; return {titulo:'Nuevo turno', linea:t.nombre + ' · ' + (t.servicio || ''), sub:fechaCorta(t.fecha) + ' · ' + t.hora + ' hs'}; }
+  if (it.tipo === 'canc') { const c = it.c; return {titulo:'Turno cancelado', linea:c.nombre + ' · ' + (c.servicio || ''), sub:fechaCorta(c.fecha) + ' · ' + c.hora + ' hs · el horario quedó libre'}; }
   return {titulo:'Nueva inscripción', linea:it.i.nombre, sub:it.i.curso || 'Curso'};
 }
 function mostrarAviso(it, extra){
@@ -1635,7 +1710,7 @@ function procesarNov(live){
       if (!Nov.pendientes) return;
       const n = Nov.pendientes; Nov.pendientes = 0;
       const box = $('#aviso');
-      box.innerHTML = '<div class="aviso-in"><span class="bell">' + ICON_BELL + '</span><div class="txt"><b>Novedades</b><span>' + (n === 1 ? 'Tenés 1 novedad' : 'Tenés ' + n + ' novedades') + ' desde la última vez</span><small>Turnos e inscripciones nuevas</small></div>'
+      box.innerHTML = '<div class="aviso-in"><span class="bell">' + ICON_BELL + '</span><div class="txt"><b>Novedades</b><span>' + (n === 1 ? 'Tenés 1 novedad' : 'Tenés ' + n + ' novedades') + ' desde la última vez</span><small>Turnos, cancelaciones e inscripciones</small></div>'
         + '<div class="acts"><button type="button" class="x" data-aviso-x aria-label="Cerrar aviso">×</button><button type="button" class="btn sm" data-aviso-ver="panel">Ver</button></div></div>';
       box.hidden = false; clearTimeout(Nov.tAviso); Nov.tAviso = setTimeout(() => { box.hidden = true; }, 15000);
     }, 900);
@@ -1656,10 +1731,12 @@ function renderNov(){
     + (n ? '<div>' + items.slice(0, 20).map(it => {
         if (it.tipo === 'turno') { const t = it.t;
           return '<div class="nov-li"><span class="k">Turno</span><span class="who"><b>' + esc(t.nombre) + '</b><span>' + esc(t.servicio || '') + ' · ' + esc(fechaCorta(t.fecha)) + ' · ' + t.hora + ' hs</span></span><button type="button" class="btn ghost sm" data-ver-dia="' + t.fecha + '">Ver</button></div>'; }
+        if (it.tipo === 'canc') { const c = it.c;
+          return '<div class="nov-li"><span class="k c">Canceló</span><span class="who"><b>' + esc(c.nombre) + '</b><span>' + esc(c.servicio || '') + ' · ' + esc(fechaCorta(c.fecha)) + ' · ' + c.hora + ' hs</span></span><button type="button" class="btn ghost sm" data-ver-dia="' + c.fecha + '">Ver</button></div>'; }
         const i = it.i, wa = waLink(i.tel, 'Hola ' + String(i.nombre).split(' ')[0] + '! Te escribo de The Big Barber por tu inscripción al curso ' + (i.curso || '') + '.');
         return '<div class="nov-li"><span class="k i">Curso</span><span class="who"><b>' + esc(i.nombre) + '</b><span>' + esc(i.curso || '') + '</span></span>' + (wa ? '<a class="btn wa sm" href="' + wa + '" target="_blank" rel="noopener">WhatsApp</a>' : '<span></span>') + '</div>';
       }).join('') + '</div><div class="row"><button type="button" class="btn sm" id="nov-visto">Marcar todo como visto</button>' + avisosCelu + '</div>'
-      : '<p class="small muted" style="margin:0">Cuando alguien saque un turno o se inscriba a un curso, te aparece un aviso arriba con sonido y queda anotado acá.</p>' + (avisosCelu ? '<div class="row">' + avisosCelu + '</div>' : ''));
+      : '<p class="small muted" style="margin:0">Cuando alguien saque o cancele un turno, o se inscriba a un curso, te aparece un aviso arriba con sonido y queda anotado acá.</p>' + (avisosCelu ? '<div class="row">' + avisosCelu + '</div>' : ''));
 }
 // "Sin ver" = creado después de la última vez que Ema marcó visto (con 15 min de margen por relojes
 // atrasados en los celus de los clientes) y que no esté en la lista de ya vistos.
@@ -1671,17 +1748,21 @@ function iniciarNov(){
   Nov.primer = +ls.get('tbb-primer-uso', 0) || 0;
   if (!Nov.primer) { Nov.primer = Date.now(); ls.set('tbb-primer-uso', Nov.primer); }
   if (!Nov.visto) { Nov.visto = Nov.primer; ls.set('tbb-visto', Nov.visto); }
-  Nov.avisados = new Set(); Nov.pendientes = 0; Nov.turnos = []; Nov.insc = []; Nov.cargoT = false; Nov.cargoI = false;
+  Nov.avisados = new Set(); Nov.pendientes = 0; Nov.turnos = []; Nov.insc = []; Nov.canc = []; Nov.cargoT = false; Nov.cargoI = false; Nov.cargoC = false;
   unsubAdmin.push(store.subTurnosDesde(Nov.visto - MARGEN_RELOJ, ts => {
     Nov.turnos = (ts || []).filter(esNovedad);
     const live = Nov.cargoT; Nov.cargoT = true; procesarNov(live);
+  }));
+  unsubAdmin.push(store.subCancelaciones(Math.max(Nov.visto - MARGEN_RELOJ, Nov.primer), cs => {
+    Nov.canc = (cs || []).filter(esNovedad);
+    const live = Nov.cargoC; Nov.cargoC = true; procesarNov(live);
   }));
 }
 function marcarVisto(){
   novItems().forEach(it => Nov.vistosIds.add(it.id.slice(2)));
   ls.set('tbb-vistos-ids', Array.from(Nov.vistosIds).slice(-300));
   Nov.visto = Date.now(); ls.set('tbb-visto', Nov.visto);
-  Nov.turnos = []; Nov.insc = []; $('#aviso').hidden = true; renderNov();
+  Nov.turnos = []; Nov.insc = []; Nov.canc = []; $('#aviso').hidden = true; renderNov();
 }
 
 function onAdmin(isAdmin){
